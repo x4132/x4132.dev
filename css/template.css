@@ -1,0 +1,9 @@
+nav ul li{
+    list-style-type: none;
+    display:inline;
+    border-right: 1px solid black;
+}
+
+nav ul:last-child{
+    border-right: none;
+}
