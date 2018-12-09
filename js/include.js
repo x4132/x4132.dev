@@ -29,7 +29,7 @@ function includeHTML() {
 var includeNV = (type, link)=>{
   let element;
   if (type == "js") element = document.createElement("script");
-  else if (type == "css")
+  else if (type == "css") element = document.createElement("style");
 };
 
 document.addEventListener("DOMContentLoaded", ()=>{
