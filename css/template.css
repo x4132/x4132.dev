@@ -8,6 +8,7 @@ nav ul li a {
     text-decoration:none;
     color:black;
     font-size: 24px;
+    cursor: pointer;
 }
 
 nav ul{
@@ -30,6 +31,7 @@ html{
 header{
     background: orange;
     padding: 1em;
+    cursor: default;
 }
 footer:{
     clear:both;
