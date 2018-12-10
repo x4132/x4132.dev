@@ -1,9 +1,36 @@
 nav ul li{
     list-style-type: none;
     display:inline;
-    border-right: 1px solid black;
+    padding: 6px;
 }
 
-nav ul:last-child{
-    border-right: none;
+nav ul li a {
+    text-decoration:none;
+    color:black;
+    font-size: 24px;
+}
+
+nav ul{
+    background-color: darkcyan;
+    border-radius:20px;
+}
+
+html{
+    background-color:darkcyan;
+}
+
+#headerLoc{
+    float:right;
+}
+
+#headerText{
+    display:inline;
+}
+
+header{
+    background: orange;
+    padding: 1em;
+}
+footer:{
+    clear:both;
 }
