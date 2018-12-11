@@ -1,3 +1,11 @@
+html{
+    background-color:#039BE5;
+}
+
+body{
+    background-color:#FB8C00;
+}
+
 nav ul li{
     list-style-type: none;
     display:inline;
@@ -12,12 +20,8 @@ nav ul li a {
 }
 
 nav ul{
-    background-color: darkcyan;
+    background-color: #29B6F6;
     border-radius:20px;
-}
-
-html{
-    background-color:darkcyan;
 }
 
 #headerLoc{
@@ -29,10 +33,22 @@ html{
 }
 
 header{
-    background: orange;
     padding: 1em;
     cursor: default;
 }
 footer:{
     clear:both;
+}
+
+section{
+    margin: 6px;
+    padding: 6px;
+    background-color:#E53935;
+}
+
+article{
+    padding: 5px;
+    border-radius: 10px;
+    border: 1px solid black;
+    margin: 6px;
 }
