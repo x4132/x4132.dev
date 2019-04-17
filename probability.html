@@ -36,7 +36,8 @@ th, td {
       }
       
       function reset(){
-        localStorage.clearItem(
+        localStorage.removeItem("table");
+        localStorage.removeItem("visiteds");
       }
       
       var disable = false;
