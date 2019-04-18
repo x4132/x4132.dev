@@ -36,8 +36,15 @@ th, td {
       }
       
       function reset(){
-        localStorage.setItem("table", null);
-        localStorage.setItem("visiteds", null);
+        localStorage.setItem("table", `<table border="1" id="table">
+      <tr><th></th><th>Roblox - 1</th><th>MineCraft -2</th><th>Krunker.io -3</th></tr>
+      <tr><th>Apex Legends -1</th><td id="11">0</td><td id="12">0</td><td id="13">0</td></tr>
+      <tr><th>Big Chungus -2</th><td id="21">0</td><td id="22">0</td><td id=23>0</td></tr>
+      <tr><th>Phantom forces -3</th><td id="31">0</td><td id="32">0</td><td id="33">0</td></tr>
+      <tr><th>Aimbot -4</th><td id="41">0</td><td id="42">0</td><td id=43>0</td></tr>
+      <tr><th>MarioKart -5</th><td id="51">0</td><td id="52">0</td><td id="53">0</td></tr>
+    </table>`);
+        localStorage.setItem("visiteds", "0");
         location.reload();
       }
       
