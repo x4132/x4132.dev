@@ -50,7 +50,7 @@ th, td {
       function load(){
         if (disable === false){
           document.getElementById("table").innerHTML = localStorage.getItem("table");
-          O("totalVisits") = localStorage.getItem("visiteds");
+          O("totalVisits").innerHTML = localStorage.getItem("visiteds");
         }
       }
       
