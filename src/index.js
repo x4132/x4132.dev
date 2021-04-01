@@ -5,7 +5,7 @@ import NotFound from "./tsx/NotFound";
 import About from "./tsx/About";
 import Writeups from "./tsx/Writeups";
 
-import { BrowserRouter as Router, Switch, Route } from "react-router-dom"
+import { HashRouter as Router, Switch, Route } from "react-router-dom"
 
 import "./css/theme.scss"
 
