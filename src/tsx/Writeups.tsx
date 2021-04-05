@@ -12,7 +12,7 @@ export default function Writeups() {
                 <Index url={url} />
             </Route>
             <Route path={`${path}/picoCTF2021`} >
-                <PicoCTF2021 url={url} />
+                <PicoCTF2021 />
             </Route>
         </Switch>
     )
