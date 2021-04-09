@@ -56,7 +56,12 @@ export default function GeneralSkills() {
                 <code>
                     There is a nice program that you can talk to by using this command in a shell: $ nc mercury.picoctf.net 49039, but it doesn't speak English...
                 </code>
-                <p className="mt-2"
+                <p className="mt-2 ">
+                    A netcat command is included. Connecting to it returns a list of ascii numbers. Converting it to text returns the flag.
+                </p>
+                <code>
+                    picoCTF{"{g00d_k1tty!_n1c3_k1tty!_3d84edc8}"}
+                </code>
             </div>
         </div>
     </div>
