@@ -4,6 +4,7 @@ import WebExploits from "./picoCTF2021/WebExploits";
 
 export default function PicoCTF2021() {
     const { path, url } = useRouteMatch();
+    console.log(url);
 
     return <Switch>
         <Route path={`${path}/general`} >
