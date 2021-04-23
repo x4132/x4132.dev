@@ -1,5 +1,6 @@
 import { Link, useRouteMatch, Route, Switch } from "react-router-dom";
 import GeneralSkills from "./picoCTF2021/GeneralSkills";
+import WebExploits from "./picoCTF2021/WebExploits";
 
 export default function PicoCTF2021() {
     const { path, url } = useRouteMatch();
@@ -7,6 +8,9 @@ export default function PicoCTF2021() {
     return <Switch>
         <Route path={`${path}/general`} >
             <GeneralSkills />
+        </Route>
+        <Route path={`${path}/webExploits`} >
+            <WebExploits />
         </Route>
         <Route exact path={path} >
             <Index url={url} />
@@ -22,6 +26,9 @@ function Index({ url }: { url: string }) {
         </div>
         <div className="mt-2" >
             <Link to={`${url}/general`} >General Skills</Link>
+        </div>
+        <div className="mt-2" >
+            <Link to={`${url}/webExploits`} >Web Exploitation</Link>
         </div>
     </div>
 }
