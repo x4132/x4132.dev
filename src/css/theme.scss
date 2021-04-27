@@ -21,3 +21,12 @@ code {
     background-color: #2b2b2b;
     padding: 10px;
 }
+
+footer {
+    display: flex;
+    justify-content: center;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+}

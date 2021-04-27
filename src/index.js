@@ -20,6 +20,17 @@ ReactDOM.render(
         <Route path="/" exact component={Index} />
         <Route path="/" component={NotFound} />
       </Switch>
+      <footer className="pb-2" >
+        <div>
+          <a href="https://twitter.com/bluninja1234" >Twitter</a>
+        </div>
+        <div className="ml-2" >
+          <a href="https://tiktok.com/x4132" onClick={e=> {e.preventDefault(); window.location.assign("https://www.youtube.com/watch?v=dQw4w9WgXcQ"); return false;}} >Tiktok</a>
+        </div>
+        <div className="ml-2" >
+          <a href="/" >Discord</a>
+        </div>
+      </footer>
     </Router>
   </React.StrictMode>,
   document.getElementById('root')
