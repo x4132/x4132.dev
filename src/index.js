@@ -25,10 +25,10 @@ ReactDOM.render(
           <a href="https://twitter.com/bluninja1234" >Twitter</a>
         </div>
         <div className="ml-2" >
-          <a href="https://tiktok.com/x4132" onClick={e=> {e.preventDefault(); window.location.assign("https://www.youtube.com/watch?v=dQw4w9WgXcQ"); return false;}} >Tiktok</a>
+          <a href="https://tiktok.com/x4132" onClick={e => { e.preventDefault(); window.location.assign("https://www.youtube.com/watch?v=dQw4w9WgXcQ"); return false; }} >Tiktok</a>
         </div>
         <div className="ml-2" >
-          <a href="/" >Discord</a>
+          <a href="/" onClick={e => { alert("0x41*32#9495"); return false; }} >Discord</a>
         </div>
       </footer>
     </Router>
