@@ -1,7 +1,6 @@
 import React from "react";
 import NavbarA from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
-import Image from "react-bootstrap/Image";
 import { Link } from "react-router-dom";
 
 import parrot from "../img/parrot.png";
