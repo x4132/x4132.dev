@@ -6,7 +6,7 @@ import Work from "./tsx/Work";
 import Writeups from "./tsx/Writeups";
 import FixSlash from './tsx/FixSlash';
 
-import { BrowserRouter as Router, Switch, Route } from "react-router-dom"
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
 
 import "./css/theme.scss"
 
@@ -14,12 +14,13 @@ ReactDOM.render(
   <React.StrictMode>
     <Router>
       <FixSlash />
-      <Switch>
-        <Route path="/writeups" component={Writeups} />
-        <Route path="/about" component={Work} />
-        <Route path="/" exact component={Index} />
-        <Route path="/" component={NotFound} />
-      </Switch>
+      <Routes>
+        <Route path="/writeups/*" element={<Writeups />} />
+        <Route path="/about/*" element={<Work />} />
+        <Route path="/work/*" element={<Work />} />
+        <Route path="/" element={<Index />} />
+        <Route path="/*" element={<NotFound />} />
+      </Routes>
     </Router>
   </React.StrictMode>,
   document.getElementById('root')

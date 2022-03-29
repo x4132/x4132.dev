@@ -13,8 +13,11 @@ export default function Navbar() {
                 <NavbarA.Brand as={Link} to="/" ><img src={parrot} alt="Home" className="navbar-img d-inline-block align-text-top" /></NavbarA.Brand>
                 <NavbarA.Toggle aria-controls="navbarobjects" />
                 <NavbarA.Collapse id="navbarobjects" >
-                    <Nav className="me-auto">
+                    <Nav>
                         <Nav.Link as={Link} to="/work" className="text-light">Work</Nav.Link>
+                    </Nav>
+                    <Nav className="me-auto" >
+                        <Nav.Link as={Link} to="/writeups" className="text-light" >Writeups</Nav.Link>
                     </Nav>
                 </NavbarA.Collapse>
             </Container>

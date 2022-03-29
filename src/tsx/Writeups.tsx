@@ -1,20 +1,17 @@
 
-import { Link, useRouteMatch, Route, Switch } from "react-router-dom";
+import { Link, Route, Routes } from "react-router-dom";
 
 import PicoCTF2021 from "./writeups/PicoCTF2021";
+import PicoCTF2022 from "./writeups/PicoCTF2022";
 
 export default function Writeups() {
-    const { path, url } = useRouteMatch();
 
     return (
-        <Switch>
-            <Route exact path={path} >
-                <Index url={url} />
-            </Route>
-            <Route path={`${path}/picoCTF2021`} >
-                <PicoCTF2021 />
-            </Route>
-        </Switch>
+        <Routes>
+            <Route path={`picoCTF2021/*`} element={<PicoCTF2021 />} />
+            <Route path={`picoCTF2022/*`} element={<PicoCTF2022 />} />
+            <Route path={"*"} element={<Index url={"/writeups"} />} />
+        </Routes>
     )
 }
 
@@ -23,8 +20,11 @@ function Index({ url }: { url: string }) {
         <div>
             <h1>Writeups</h1>
         </div>
-        <div>
+        <div className="mt-2" >
             <Link to={`${url}/picoCTF2021`} >picoCTF 2021</Link>
+        </div>
+        <div className="mt-2" >
+            <Link to={`${url}/picoCTF2022`} >picoCTF 2022</Link>
         </div>
     </div>
 }
