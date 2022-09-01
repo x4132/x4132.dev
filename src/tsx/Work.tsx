@@ -53,7 +53,7 @@ function Project({ name, image, link, description }: { name: string, image: stri
             {description}
         </div>
         <div className="pt-2" >
-            <a href={link} target="_blank" rel="noreferrer" ><img src={image} className="w-100 h-100" /></a>
+            <a href={link} target="_blank" rel="noreferrer" ><img src={image} className="w-100 h-100" alt={name} /></a>
         </div>
     </div>
 }

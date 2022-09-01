@@ -12,7 +12,7 @@ export default function GeneralSkills() {
                 <code>This file has a flag in plain sight (aka "in-the-clear").</code>
                 <p className="mt-2" >
                     A flag is attached. Download & open for flag.
-            </p>
+                </p>
                 <div>
                     Flag: <code>picoCTF{"{s4n1ty_v3r1f13d_4a2b35fd}"}</code>
                 </div>
