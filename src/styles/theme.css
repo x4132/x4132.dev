@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+
+  body,
+  html {
+    @apply font-body;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .dark {
+    background-color: #1f1e33;
+    @apply text-light;
+  }
+
+  .dark b,
+  .dark em {
+    @apply text-secondary;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply font-medium;
+    @apply rounded p-1 pe-2 ps-2;
+  }
+
+  .btn-primary {
+    @apply text-primary;
+    @apply bg-secondary/30;
+    @apply hover:bg-primary hover:text-gray-100;
+
+    @apply btn;
+  }
+
+  .toggle {
+    @apply bg-transparent text-inherit;
+    @apply btn;
+    @apply cursor-pointer;
+    @apply hover:bg-secondary/80 hover:text-gray-100;
+  }
+
+  .toggleDown {
+    @apply bg-secondary/30 text-primary;
+  }
+
+  .dropdown-transition {
+    max-height: 0px;
+    transition: max-height 0.5s;
+  }
+
+  .input-text {
+    @apply p-2;
+    @apply rounded-md;
+  }
+
+  .linebar {
+    @apply border-black;
+    @apply p-2;
+    @apply border-r;
+    @apply text-right;
+
+    @apply dark:border-light;
+  }
+
+  .linebar-header {
+    @apply text-xl;
+    @apply font-bold;
+  }
+}

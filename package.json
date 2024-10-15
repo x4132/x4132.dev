@@ -3,13 +3,17 @@
   "version": "1.0.50",
   "scripts": {
     "----BUILD": "",
-    "build": "tailwindcss -i ./src/styles/theme.css -o ./public/theme.css",
+    "build": "bun run buildcss && bun run buildclient",
+    "buildcss": "tailwindcss -i ./src/styles/theme.css -o ./public/theme.css",
+    "buildclient": "cd ./src/client/ && tsc",
+    "----TEST": "",
     "test": "echo \"Error: no test specified\" && exit 1",
-
-    "dev": "concurrently \"run --watch src/index.ts\" \"bun run build --watch\" ",
+    "----RUN": "",
+    "dev": "concurrently -n \"server,client_tsc,tailwind\" -c auto \"bun run --watch src/index.ts\" \"bun run buildclient --watch\" \"bun run buildcss --watch\" ",
     "start": "bun run build && bun src/index.ts"
   },
   "dependencies": {
+    "@elysiajs/eden": "^1.1.2",
     "@elysiajs/html": "1.1.0",
     "@elysiajs/static": "^1.1.0",
     "@kitajs/ts-html-plugin": "^4.0.2",
@@ -23,6 +27,7 @@
     "bun-types": "^1.1.21",
     "concurrently": "^8.2.2",
     "eslint": "^9.8.0",
+    "htmx.org": "^2.0.1",
     "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.6.5",
     "tailwindcss": "^3.4.7",
@@ -30,6 +35,6 @@
     "typescript": "^5.5.4"
   },
   "module": "src/index.js",
-  "packageManager": "yarn@4.3.1",
+  "packageManager": "yarn@4.4.0",
   "license": "UNLICENSED"
 }

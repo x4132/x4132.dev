@@ -219,6 +219,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@elysiajs/eden@npm:^1.1.2":
+  version: 1.1.2
+  resolution: "@elysiajs/eden@npm:1.1.2"
+  peerDependencies:
+    elysia: ">= 1.1.0"
+  checksum: 10c0/010596a7d4217a1745ef2924c62837d2a5af1a5100ac09818328bd8bf3d004750b8c5ff6ae2d8f6cea68986a691adc6b01de518de05de6b2ac97cbbb4feb9080
+  languageName: node
+  linkType: hard
+
 "@elysiajs/html@npm:1.1.0":
   version: 1.1.0
   resolution: "@elysiajs/html@npm:1.1.0"
@@ -667,6 +676,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "app@workspace:."
   dependencies:
+    "@elysiajs/eden": "npm:^1.1.2"
     "@elysiajs/html": "npm:1.1.0"
     "@elysiajs/static": "npm:^1.1.0"
     "@ianvs/prettier-plugin-sort-imports": "npm:^4.3.1"
@@ -677,6 +687,7 @@ __metadata:
     concurrently: "npm:^8.2.2"
     elysia: "npm:latest"
     eslint: "npm:^9.8.0"
+    htmx.org: "npm:^2.0.1"
     prettier: "npm:^3.3.3"
     prettier-plugin-tailwindcss: "npm:^0.6.5"
     sass: "npm:^1.77.8"
@@ -1477,6 +1488,13 @@ __metadata:
   dependencies:
     function-bind: "npm:^1.1.2"
   checksum: 10c0/3769d434703b8ac66b209a4cca0737519925bbdb61dd887f93a16372b14694c63ff4e797686d87c90f08168e81082248b9b028bad60d4da9e0d1148766f56eb9
+  languageName: node
+  linkType: hard
+
+"htmx.org@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "htmx.org@npm:2.0.1"
+  checksum: 10c0/2b08d33104bd207d9285c15c904022164a7ea6fe9b3d7e6154bfbb780b921ec68b1e1d31267ecf2c5c6cb266cb19dcaa1c93c44ad2bd93b1f38e8b3ab54e6db4
   languageName: node
   linkType: hard
 
