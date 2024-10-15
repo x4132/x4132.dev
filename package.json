@@ -1,40 +1,41 @@
 {
-  "name": "app",
-  "version": "1.0.50",
-  "scripts": {
-    "----BUILD": "",
-    "build": "bun run buildcss && bun run buildclient",
-    "buildcss": "tailwindcss -i ./src/styles/theme.css -o ./public/theme.css",
-    "buildclient": "cd ./src/client/ && tsc",
-    "----TEST": "",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "----RUN": "",
-    "dev": "concurrently -n \"server,client_tsc,tailwind\" -c auto \"bun run --watch src/index.ts\" \"bun run buildclient --watch\" \"bun run buildcss --watch\" ",
-    "start": "bun run build && bun src/index.ts"
-  },
-  "dependencies": {
-    "@elysiajs/eden": "^1.1.2",
-    "@elysiajs/html": "1.1.0",
-    "@elysiajs/static": "^1.1.0",
-    "@kitajs/ts-html-plugin": "^4.0.2",
-    "elysia": "latest",
-    "sass": "^1.77.8"
-  },
-  "devDependencies": {
-    "@ianvs/prettier-plugin-sort-imports": "^4.3.1",
-    "@tailwindcss/typography": "^0.5.13",
-    "@types/eslint": "^9",
-    "bun-types": "^1.1.21",
-    "concurrently": "^8.2.2",
-    "eslint": "^9.8.0",
-    "htmx.org": "^2.0.1",
-    "prettier": "^3.3.3",
-    "prettier-plugin-tailwindcss": "^0.6.5",
-    "tailwindcss": "^3.4.7",
-    "tailwindcss-animate": "^1.0.7",
-    "typescript": "^5.5.4"
-  },
-  "module": "src/index.js",
-  "packageManager": "yarn@4.4.0",
-  "license": "UNLICENSED"
+    "name": "app",
+    "version": "1.0.50",
+    "scripts": {
+        "----BUILD": "",
+        "build": "bun run buildcss && bun run buildclient",
+        "buildcss": "tailwindcss -i ./src/styles/theme.css -o ./public/theme.css",
+        "buildclient": "cd ./src/client/ && bunx tsc",
+        "----TEST": "",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "----RUN": "",
+        "dev": "concurrently -n \"server,client_tsc,tailwind\" -c auto \"bun run --watch src/index.ts\" \"bun run buildclient --watch\" \"bun run buildcss --watch\" ",
+        "start": "bun run build && bun src/index.ts"
+    },
+    "dependencies": {
+        "@elysiajs/eden": "^1.1.3",
+        "@elysiajs/html": "^1.1.1",
+        "@elysiajs/static": "^1.1.1",
+        "@kitajs/ts-html-plugin": "^4.1.0",
+        "@tailwindcss/typography": "^0.5.15",
+        "@xterm/xterm": "^5.5.0",
+        "bun-types": "^1.1.21",
+        "concurrently": "^9.0.1",
+        "elysia": "^1.1.22",
+        "eslint": "^9.12.0",
+        "htmx.org": "2",
+        "prettier": "^3.3.3",
+        "prettier-plugin-tailwindcss": "^0.6.8",
+        "sass": "^1.79.5",
+        "tailwindcss": "^3.4.14",
+        "tailwindcss-animate": "^1.0.7",
+        "typescript": "^5.6.3"
+    },
+    "devDependencies": {
+        "@ianvs/prettier-plugin-sort-imports": "^4.3.1",
+        "@types/eslint": "^9"
+    },
+    "module": "src/index.js",
+    "packageManager": "yarn@4.5.0",
+    "license": "UNLICENSED"
 }
