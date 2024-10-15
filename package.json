@@ -1,46 +1,40 @@
 {
-  "name": "x4132.github.io",
-  "homepage": "https://x4132.github.io",
-  "version": "0.1.0",
-  "private": true,
-  "dependencies": {
-    "@types/react": "^18.0.18",
-    "@types/react-router-dom": "^5.3.3",
-    "bootstrap": "^5.2.0",
-    "gh-pages": "^4.0.0",
-    "node-sass": "^9.0.0",
-    "react": "^18.2.0",
-    "react-bootstrap": "^2.5.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.3.0",
-    "react-scripts": "^5.0.1",
-    "sass": "^1.54.8",
-    "typescript": "^4.8.2"
-  },
+  "name": "app",
+  "version": "1.0.50",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "predeploy": "yarn build",
-    "deploy": "gh-pages -d build"
+    "----BUILD": "",
+    "build": "bun run buildcss && bun run buildclient",
+    "buildcss": "tailwindcss -i ./src/styles/theme.css -o ./public/theme.css",
+    "buildclient": "cd ./src/client/ && tsc",
+    "----TEST": "",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "----RUN": "",
+    "dev": "concurrently -n \"server,client_tsc,tailwind\" -c auto \"bun run --watch src/index.ts\" \"bun run buildclient --watch\" \"bun run buildcss --watch\" ",
+    "start": "bun run build && bun src/index.ts"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+  "dependencies": {
+    "@elysiajs/eden": "^1.1.2",
+    "@elysiajs/html": "1.1.0",
+    "@elysiajs/static": "^1.1.0",
+    "@kitajs/ts-html-plugin": "^4.0.2",
+    "elysia": "latest",
+    "sass": "^1.77.8"
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  }
+  "devDependencies": {
+    "@ianvs/prettier-plugin-sort-imports": "^4.3.1",
+    "@tailwindcss/typography": "^0.5.13",
+    "@types/eslint": "^9",
+    "bun-types": "^1.1.21",
+    "concurrently": "^8.2.2",
+    "eslint": "^9.8.0",
+    "htmx.org": "^2.0.1",
+    "prettier": "^3.3.3",
+    "prettier-plugin-tailwindcss": "^0.6.5",
+    "tailwindcss": "^3.4.7",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.5.4"
+  },
+  "module": "src/index.js",
+  "packageManager": "yarn@4.4.0",
+  "license": "UNLICENSED"
 }

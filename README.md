@@ -1,4 +1,4 @@
-# x4132's github pages
-this is my github pages, I guess
+# x4132.dev
 
-now with more nginx
+My personal website, built with bun, elysia, tailwind, and HTMX.
+Site optimized for maximal SEO and accessibility.
