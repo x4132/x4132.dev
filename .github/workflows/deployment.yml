@@ -30,4 +30,5 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
-          tags: x4132.dev:latest
+          tags: ghcr.io/${{ env.REPO }}:${{ github.sha }}
+          file: ./Dockerfile
