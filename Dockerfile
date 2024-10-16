@@ -16,12 +16,6 @@ COPY public public
 RUN bun run tailwindcss -i ./src/styles/theme.css -o ./public/theme.css
 RUN bun run buildclient
 
-RUN addgroup --system --gid 1001 bunjs
-RUN adduser --system --uid 1001 elysiajs
-USER elysiajs
-
-WORKDIR /app
-
 ENV NODE_ENV production
 ENV PORT ${PORT} 
 ENV HOSTNAME localhost
