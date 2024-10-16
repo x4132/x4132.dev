@@ -9,7 +9,7 @@ import { no_cache } from "./no_cache";
 
 const app = new Elysia()
     .use(staticPlugin())
-    .use(staticPlugin({ assets: "./js/", prefix: "js" }))
+    .use(staticPlugin({ assets: "js", prefix: "js" }))
     .use(html({ autoDetect: true }))
     .use(
         no_cache({
