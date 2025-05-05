@@ -5,7 +5,7 @@
         "----BUILD": "",
         "build": "bun run buildcss && bun run buildclient",
         "buildcss": "tailwindcss -i ./src/styles/theme.css -o ./public/theme.css",
-        "buildclient": "cd ./src/client/ && bunx tsc",
+        "buildclient": "cd ./src/client/ && tsc",
         "----TEST": "",
         "test": "echo \"Error: no test specified\" && exit 1",
         "----RUN": "",
