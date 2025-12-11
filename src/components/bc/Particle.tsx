@@ -2,7 +2,22 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
 
+export interface DecayProduct {
+  type: string;
+  momentumFraction: number;
+  angleOffset: number;
+}
+
+export interface DecayConfig {
+  meanLifetime: number; // in simulation time units
+  channels: Array<{
+    probability: number;
+    products: DecayProduct[];
+  }>;
+}
+
 export interface ParticleProps {
+  id?: string;
   startPosition?: [number, number, number];
   initialMomentum?: number;
   initialAngle?: number;
@@ -11,6 +26,14 @@ export interface ParticleProps {
   mass: number;
   charge: number;
   color: string;
+  decay?: DecayConfig;
+  onDeath?: (info: {
+    id: string;
+    position: [number, number, number];
+    momentum: number;
+    angle: number;
+    decayProducts: DecayProduct[] | null;
+  }) => void;
 }
 
 interface ParticleState {
@@ -21,18 +44,44 @@ interface ParticleState {
   angle: number;
   alive: boolean;
   points: [number, number, number][];
+  age: number;
+  decayTime: number | null;
+  hasDecayed: boolean;
 }
 
 const dt = 0.01;
 
+// Sample from exponential distribution for radioactive decay
+function sampleDecayTime(meanLifetime: number): number {
+  return -meanLifetime * Math.log(Math.random());
+}
+
+// Select decay channel based on probabilities
+function selectDecayChannel(
+  channels: DecayConfig["channels"]
+): DecayProduct[] | null {
+  const rand = Math.random();
+  let cumulative = 0;
+  for (const channel of channels) {
+    cumulative += channel.probability;
+    if (rand < cumulative) {
+      return channel.products;
+    }
+  }
+  return null;
+}
+
 export function useParticlePhysics(
+  id: string,
   startPosition: [number, number, number],
   initialMomentum: number,
   initialAngle: number | undefined,
   mass: number,
   charge: number,
   bField: number,
-  energyLossRate: number
+  energyLossRate: number,
+  decay: DecayConfig | undefined,
+  onDeath: ParticleProps["onDeath"]
 ) {
   const state = useRef<ParticleState>({
     x: startPosition[0],
@@ -42,6 +91,9 @@ export function useParticlePhysics(
     angle: initialAngle ?? Math.random() * Math.PI * 2,
     alive: true,
     points: [[startPosition[0], startPosition[1], startPosition[2]]],
+    age: 0,
+    decayTime: decay ? sampleDecayTime(decay.meanLifetime) : null,
+    hasDecayed: false,
   });
 
   const lineRef = useRef<THREE.Line>(null);
@@ -53,8 +105,38 @@ export function useParticlePhysics(
     const stepsPerFrame = 5;
 
     for (let i = 0; i < stepsPerFrame; i++) {
-      if (s.momentum <= 0.1) {
+      // Check for decay
+      if (
+        decay &&
+        s.decayTime !== null &&
+        s.age >= s.decayTime &&
+        !s.hasDecayed
+      ) {
+        s.hasDecayed = true;
         s.alive = false;
+        const products = selectDecayChannel(decay.channels);
+        onDeath?.({
+          id,
+          position: [s.x, s.y, s.z],
+          momentum: s.momentum,
+          angle: s.angle,
+          decayProducts: products,
+        });
+        return;
+      }
+
+      // Check for momentum loss death
+      if (s.momentum <= 0.2) {
+        s.alive = false;
+        if (!s.hasDecayed) {
+          onDeath?.({
+            id,
+            position: [s.x, s.y, s.z],
+            momentum: s.momentum,
+            angle: s.angle,
+            decayProducts: null,
+          });
+        }
         return;
       }
 
@@ -69,6 +151,7 @@ export function useParticlePhysics(
       s.y += Math.sin(s.angle) * speed * dt;
       s.angle += omega * dt;
       s.momentum *= 1 - energyLossRate;
+      s.age += dt;
 
       s.points.push([s.x, s.y, s.z]);
     }
@@ -88,7 +171,11 @@ export function useParticlePhysics(
   return { state, lineRef };
 }
 
+let particleIdCounter = 0;
+const generateParticleId = () => `p_${++particleIdCounter}`;
+
 export default function Particle({
+  id,
   startPosition = [0, 0, 0],
   initialMomentum = 0.5,
   initialAngle,
@@ -97,15 +184,22 @@ export default function Particle({
   mass,
   charge,
   color,
+  decay,
+  onDeath,
 }: ParticleProps) {
+  const particleId = useRef(id ?? generateParticleId());
+
   const { lineRef } = useParticlePhysics(
+    particleId.current,
     startPosition,
     initialMomentum,
     initialAngle,
     mass,
     charge,
     bField,
-    energyLossRate
+    energyLossRate,
+    decay,
+    onDeath
   );
 
   return (
