@@ -1,0 +1,16 @@
+---
+import { Search } from "lucide-react";
+const currentURL = Astro.url.pathname;
+---
+
+<header>
+    <nav class="flex items-center w-full p-6 space-x-4 text-2xl font-light">
+        <button class={`mr-auto ${currentURL === "/" && "invisible"}`}
+            >Home</button
+        >
+
+        <button>Blog</button>
+        <button>Tools</button>
+        <button><Search /></button>
+    </nav>
+</header>
