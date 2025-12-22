@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type EventType = "pair_production" | "decay_chain";
+export type EventType = "pair_production" | "cosmic_ray" | "kaon_decay" | "v_event" | "muon_pair" | "pion_pair";
 
 export interface PhysicsEvent {
   id: string;
@@ -22,8 +22,6 @@ export interface ParticleRecord {
 interface EventStore {
   events: Map<string, PhysicsEvent>;
   particles: Map<string, ParticleRecord>;
-
-  // Actions
   spawnEvent: (type: EventType, position: [number, number, number]) => string;
   registerParticle: (
     eventId: string,
@@ -112,10 +110,6 @@ export const useEventStore = create<EventStore>((set, get) => ({
       }
       return { particles };
     });
-
-    // Note: Decay products are spawned by the particle component itself
-    // This callback just marks the parent as dead
-    // The decayProducts param is reserved for future use (e.g., analytics)
   },
 
   cleanup: (eventId) => {
@@ -125,7 +119,6 @@ export const useEventStore = create<EventStore>((set, get) => ({
 
       const event = events.get(eventId);
       if (event) {
-        // Remove all particles belonging to this event
         for (const particleId of event.particleIds) {
           particles.delete(particleId);
         }

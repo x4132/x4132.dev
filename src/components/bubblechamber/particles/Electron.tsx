@@ -2,7 +2,6 @@ import Particle, { type ParticleProps } from "./Particle";
 
 type ElectronProps = Omit<ParticleProps, "mass" | "charge" | "color" | "decay">;
 
-// Electron is stable - no decay
 export default function Electron(props: ElectronProps) {
   return (
     <Particle

@@ -1,9 +1,8 @@
 import { useState, useCallback, useMemo } from "react";
-import Electron from "./Electron";
-import Positron from "./Positron";
-import Muon from "./Muon";
-import AntiMuon from "./AntiMuon";
-import { type DecayProduct } from "./Particle";
+import Electron from "../particles/Electron";
+import Positron from "../particles/Positron";
+import { PARTICLE_COMPONENTS } from "../particles/registry";
+import { type DecayProduct } from "../particles/Particle";
 
 interface PairProductionProps {
   eventId: string;
@@ -20,30 +19,6 @@ interface SpawnedParticle {
   angle: number;
 }
 
-// Map particle type strings to components
-const PARTICLE_COMPONENTS: Record<
-  string,
-  React.ComponentType<{
-    id?: string;
-    startPosition?: [number, number, number];
-    initialMomentum?: number;
-    initialAngle?: number;
-    bField?: number;
-    onDeath?: (info: {
-      id: string;
-      position: [number, number, number];
-      momentum: number;
-      angle: number;
-      decayProducts: DecayProduct[] | null;
-    }) => void;
-  }>
-> = {
-  electron: Electron,
-  positron: Positron,
-  muon: Muon,
-  antimuon: AntiMuon,
-};
-
 export default function PairProduction({
   eventId,
   position,
@@ -52,31 +27,23 @@ export default function PairProduction({
 }: PairProductionProps) {
   const [decayParticles, setDecayParticles] = useState<SpawnedParticle[]>([]);
 
-  // Randomize initial conditions once at mount
   const initialConditions = useMemo(() => {
-    // Random energy split: electron gets 40-60% of total energy
     const electronFraction = 0.4 + Math.random() * 0.2;
     const positronFraction = 1 - electronFraction;
 
-    // Add some overall energy variation (±30%)
-    const energyVariation = 1 + Math.random() * 25;
+    const energyVariation = 0.5 + Math.random() * 5;
     const totalMomentum = initialMomentum * energyVariation;
-
-    // Random base angle
     const baseAngle = Math.random() * Math.PI * 2;
-
-    // Small angular asymmetry (not perfectly opposite)
-    const angleSpread = 1.5;
+    const angleSpread = Math.random() * Math.PI / 8;
 
     return {
       electronMomentum: totalMomentum * electronFraction,
       positronMomentum: totalMomentum * positronFraction,
-      electronAngle: baseAngle + angleSpread,
-      positronAngle: baseAngle + Math.PI - angleSpread,
+      electronAngle: baseAngle - angleSpread,
+      positronAngle: baseAngle + angleSpread,
     };
   }, [initialMomentum]);
 
-  // Handle particle death and spawn decay products
   const handleDeath = useCallback(
     (info: {
       id: string;
@@ -104,7 +71,6 @@ export default function PairProduction({
 
   return (
     <>
-      {/* Initial electron-positron pair with asymmetric energies */}
       <Electron
         id={`${eventId}_electron`}
         startPosition={position}
@@ -121,8 +87,6 @@ export default function PairProduction({
         bField={bField}
         onDeath={handleDeath}
       />
-
-      {/* Render decay products */}
       {decayParticles.map((particle) => {
         const Component = PARTICLE_COMPONENTS[particle.type];
         if (!Component) return null;

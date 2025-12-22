@@ -2,7 +2,6 @@ import Particle, { type ParticleProps } from "./Particle";
 
 type PositronProps = Omit<ParticleProps, "mass" | "charge" | "color" | "decay">;
 
-// Positron is stable - no decay
 export default function Positron(props: PositronProps) {
   return (
     <Particle
