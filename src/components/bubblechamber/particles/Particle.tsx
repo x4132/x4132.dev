@@ -9,7 +9,7 @@ export interface DecayProduct {
 }
 
 export interface DecayConfig {
-  meanLifetime: number; // in simulation time units
+  meanLifetime: number;
   channels: Array<{
     probability: number;
     products: DecayProduct[];
@@ -23,6 +23,7 @@ export interface ParticleProps {
   initialAngle?: number;
   bField?: number;
   energyLossRate?: number;
+  bounds?: { x: number; y: number };
   mass: number;
   charge: number;
   color: string;
@@ -47,16 +48,22 @@ interface ParticleState {
   age: number;
   decayTime: number | null;
   hasDecayed: boolean;
+  isFading: boolean;
+  fadeProgress: number;
+  fadeDelayRemaining: number;
 }
 
 const dt = 0.01;
+const FADE_DELAY = 1.5;
+const FADE_DURATION = 3.0;
+const FADE_SPEED = 1;
+const STEPS_PER_FRAME = 5;
+const MIN_MOMENTUM = 0.2;
 
-// Sample from exponential distribution for radioactive decay
 function sampleDecayTime(meanLifetime: number): number {
   return -meanLifetime * Math.log(Math.random());
 }
 
-// Select decay channel based on probabilities
 function selectDecayChannel(
   channels: DecayConfig["channels"]
 ): DecayProduct[] | null {
@@ -81,6 +88,7 @@ export function useParticlePhysics(
   bField: number,
   energyLossRate: number,
   decay: DecayConfig | undefined,
+  bounds: { x: number; y: number } | undefined,
   onDeath: ParticleProps["onDeath"]
 ) {
   const state = useRef<ParticleState>({
@@ -94,6 +102,9 @@ export function useParticlePhysics(
     age: 0,
     decayTime: decay ? sampleDecayTime(decay.meanLifetime) : null,
     hasDecayed: false,
+    isFading: false,
+    fadeProgress: 0,
+    fadeDelayRemaining: FADE_DELAY,
   });
 
   const lineRef = useRef<THREE.Line>(null);
@@ -102,10 +113,30 @@ export function useParticlePhysics(
     const s = state.current;
     if (!s.alive) return;
 
-    const stepsPerFrame = 5;
+    if (s.isFading) {
+      if (s.fadeDelayRemaining > 0) {
+        s.fadeDelayRemaining -= dt;
+        return;
+      }
 
-    for (let i = 0; i < stepsPerFrame; i++) {
-      // Check for decay
+      const fadeIncrement = dt / FADE_DURATION;
+      s.fadeProgress += fadeIncrement * (1 + FADE_SPEED * (1 - s.fadeProgress));
+
+      if (s.fadeProgress >= 1.0) {
+        s.alive = false;
+        return;
+      }
+
+      if (lineRef.current?.material) {
+        const mat = lineRef.current.material as THREE.LineBasicMaterial;
+        mat.transparent = true;
+        mat.opacity = 1 - s.fadeProgress;
+      }
+
+      return;
+    }
+
+    for (let i = 0; i < STEPS_PER_FRAME; i++) {
       if (
         decay &&
         s.decayTime !== null &&
@@ -113,7 +144,7 @@ export function useParticlePhysics(
         !s.hasDecayed
       ) {
         s.hasDecayed = true;
-        s.alive = false;
+        s.isFading = true;
         const products = selectDecayChannel(decay.channels);
         onDeath?.({
           id,
@@ -125,9 +156,8 @@ export function useParticlePhysics(
         return;
       }
 
-      // Check for momentum loss death
-      if (s.momentum <= 0.2) {
-        s.alive = false;
+      if (s.momentum <= MIN_MOMENTUM && !s.isFading) {
+        s.isFading = true;
         if (!s.hasDecayed) {
           onDeath?.({
             id,
@@ -140,11 +170,11 @@ export function useParticlePhysics(
         return;
       }
 
-      // Relativistic velocity: v = p / sqrt(p² + m²)
+      // Relativistic velocity
       const energy = Math.sqrt(s.momentum * s.momentum + mass * mass);
       const speed = s.momentum / energy;
 
-      // Cyclotron frequency: ω = qB / E (relativistic)
+      // Cyclotron frequency
       const omega = (charge * bField) / energy;
 
       s.x += Math.cos(s.angle) * speed * dt;
@@ -154,9 +184,25 @@ export function useParticlePhysics(
       s.age += dt;
 
       s.points.push([s.x, s.y, s.z]);
+
+      // Check viewport bounds if provided
+      if (bounds && !s.isFading) {
+        if (Math.abs(s.x) > bounds.x || Math.abs(s.y) > bounds.y) {
+          s.isFading = true;
+          if (!s.hasDecayed) {
+            onDeath?.({
+              id,
+              position: [s.x, s.y, s.z],
+              momentum: s.momentum,
+              angle: s.angle,
+              decayProducts: null,
+            });
+          }
+          return;
+        }
+      }
     }
 
-    // Update line geometry
     if (lineRef.current) {
       const positions = new Float32Array(s.points.flat());
       lineRef.current.geometry.setAttribute(
@@ -181,6 +227,7 @@ export default function Particle({
   initialAngle,
   bField = 2,
   energyLossRate = 0.005,
+  bounds,
   mass,
   charge,
   color,
@@ -199,13 +246,14 @@ export default function Particle({
     bField,
     energyLossRate,
     decay,
+    bounds,
     onDeath
   );
 
   return (
     <primitive object={new THREE.Line()} ref={lineRef}>
       <bufferGeometry />
-      <lineBasicMaterial color={color} />
+      <lineBasicMaterial color={color} transparent={true} opacity={1} />
     </primitive>
   );
 }
