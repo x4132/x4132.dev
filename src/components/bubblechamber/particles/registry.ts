@@ -1,32 +1,212 @@
-import Electron from "./Electron";
-import Positron from "./Positron";
-import Muon from "./Muon";
-import AntiMuon from "./AntiMuon";
-import Pion from "./Pion";
-import Proton from "./Proton";
-import { type DecayProduct } from "./Particle";
+import type { DecayConfig, ParticleType } from "../../../lib/useEventStore";
 
-export const PARTICLE_COMPONENTS: Record<
-  string,
-  React.ComponentType<{
-    id?: string;
-    startPosition?: [number, number, number];
-    initialMomentum?: number;
-    initialAngle?: number;
-    bField?: number;
-    onDeath?: (info: {
-      id: string;
-      position: [number, number, number];
-      momentum: number;
-      angle: number;
-      decayProducts: DecayProduct[] | null;
-    }) => void;
-  }>
-> = {
-  electron: Electron,
-  positron: Positron,
-  muon: Muon,
-  antimuon: AntiMuon,
-  pion: Pion,
-  proton: Proton,
+/**
+ * Static particle physics data for each particle type
+ */
+export interface ParticleData {
+  mass: number;
+  charge: number;
+  color: string;
+  decay?: DecayConfig;
+}
+
+const MUON_DECAY: DecayConfig = {
+  meanLifetime: 1.5,
+  channels: [
+    {
+      probability: 1.0,
+      products: [
+        {
+          type: "electron",
+          momentumFraction: 0.5,
+          angleOffset: 0.3,
+        },
+      ],
+    },
+  ],
 };
+
+const ANTIMUON_DECAY: DecayConfig = {
+  meanLifetime: 1.5,
+  channels: [
+    {
+      probability: 1.0,
+      products: [
+        {
+          type: "positron",
+          momentumFraction: 0.5,
+          angleOffset: 0.3,
+        },
+      ],
+    },
+  ],
+};
+
+// π+ → μ+ + νμ (99.99% branching ratio)
+// We ignore the neutrino since it's invisible
+const PION_PLUS_DECAY: DecayConfig = {
+  meanLifetime: 0.5,
+  channels: [
+    {
+      probability: 0.9999,
+      products: [
+        {
+          type: "antimuon",
+          momentumFraction: 0.8,
+          angleOffset: 0.1,
+        },
+      ],
+    },
+  ],
+};
+
+// π- → μ- + anti-νμ
+const PION_MINUS_DECAY: DecayConfig = {
+  meanLifetime: 0.5,
+  channels: [
+    {
+      probability: 0.9999,
+      products: [
+        {
+          type: "muon",
+          momentumFraction: 0.8,
+          angleOffset: 0.1,
+        },
+      ],
+    },
+  ],
+};
+
+// π⁰ → γ + γ (98.8% branching ratio)
+// Very short-lived - decays almost immediately
+const PION_NEUTRAL_DECAY: DecayConfig = {
+  meanLifetime: 0.1,
+  channels: [
+    {
+      probability: 1.0,
+      products: [
+        {
+          type: "photon",
+          momentumFraction: 0.5,
+          angleOffset: 0.3,
+        },
+        {
+          type: "photon",
+          momentumFraction: 0.5,
+          angleOffset: 0.3,
+        },
+      ],
+    },
+  ],
+};
+
+// K⁰ decays - simplified decay modes
+// K⁰_S → π+ + π- (69%) or π⁰ + π⁰ (31%)
+const KAON_NEUTRAL_DECAY: DecayConfig = {
+  meanLifetime: 0.8,
+  channels: [
+    {
+      probability: 0.69,
+      products: [
+        {
+          type: "pion",
+          momentumFraction: 0.5,
+          angleOffset: 0.2,
+        },
+        {
+          type: "pion_minus",
+          momentumFraction: 0.5,
+          angleOffset: 0.2,
+        },
+      ],
+    },
+    {
+      probability: 0.31,
+      products: [
+        {
+          type: "pion_neutral",
+          momentumFraction: 0.5,
+          angleOffset: 0.2,
+        },
+        {
+          type: "pion_neutral",
+          momentumFraction: 0.5,
+          angleOffset: 0.2,
+        },
+      ],
+    },
+  ],
+};
+
+/**
+ * Registry of all particle types and their physics properties
+ */
+export const PARTICLE_DATA: Record<ParticleType, ParticleData> = {
+  electron: {
+    mass: 0.000511,
+    charge: -1,
+    color: "#88ccff",
+    decay: undefined,
+  },
+  positron: {
+    mass: 0.000511,
+    charge: 1,
+    color: "#ff88cc",
+    decay: undefined,
+  },
+  muon: {
+    mass: 0.1057,
+    charge: -1,
+    color: "#88ffcc",
+    decay: MUON_DECAY,
+  },
+  antimuon: {
+    mass: 0.1057,
+    charge: 1,
+    color: "#ffcc88",
+    decay: ANTIMUON_DECAY,
+  },
+  pion: {
+    mass: 0.1396,
+    charge: 1,
+    color: "#ccff88",
+    decay: PION_PLUS_DECAY,
+  },
+  pion_minus: {
+    mass: 0.1396,
+    charge: -1,
+    color: "#88ff88",
+    decay: PION_MINUS_DECAY,
+  },
+  pion_neutral: {
+    mass: 0.135,
+    charge: 0,
+    color: "#ffff88",
+    decay: PION_NEUTRAL_DECAY,
+  },
+  kaon_neutral: {
+    mass: 0.498,
+    charge: 0,
+    color: "#aa88ff",
+    decay: KAON_NEUTRAL_DECAY,
+  },
+  photon: {
+    mass: 0,
+    charge: 0,
+    color: "#ffffaa",
+    decay: undefined,
+  },
+  proton: {
+    mass: 0.9383,
+    charge: 1,
+    color: "#ff8888",
+    decay: undefined,
+  },
+};
+
+/**
+ * Helper to get spawn data for a particle type
+ */
+export function getParticleData(type: ParticleType): ParticleData | undefined {
+  return PARTICLE_DATA[type];
+}
