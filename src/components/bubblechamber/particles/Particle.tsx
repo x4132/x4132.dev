@@ -1,40 +1,30 @@
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
-import { useRef } from "react";
+import { useRef, useMemo, useEffect } from "react";
+import {
+  useEventStore,
+  type DecayConfig,
+  type DecayProduct,
+  type ParticleSpawnData,
+  type ParticleType,
+} from "../../../lib/useEventStore";
+import { PARTICLE_DATA } from "./registry";
 
-export interface DecayProduct {
-  type: string;
-  momentumFraction: number;
-  angleOffset: number;
-}
-
-export interface DecayConfig {
-  meanLifetime: number;
-  channels: Array<{
-    probability: number;
-    products: DecayProduct[];
-  }>;
-}
+export type { DecayProduct, DecayConfig };
 
 export interface ParticleProps {
-  id?: string;
-  startPosition?: [number, number, number];
-  initialMomentum?: number;
-  initialAngle?: number;
-  bField?: number;
-  energyLossRate?: number;
+  id: string;
+  eventId: string;
+  startPosition: [number, number, number];
+  initialMomentum: number;
+  initialAngle: number;
+  bField: number;
+  energyLossRate: number;
   bounds?: { x: number; y: number };
   mass: number;
   charge: number;
   color: string;
   decay?: DecayConfig;
-  onDeath?: (info: {
-    id: string;
-    position: [number, number, number];
-    momentum: number;
-    angle: number;
-    decayProducts: DecayProduct[] | null;
-  }) => void;
 }
 
 interface ParticleState {
@@ -78,25 +68,49 @@ function selectDecayChannel(
   return null;
 }
 
-export function useParticlePhysics(
-  id: string,
-  startPosition: [number, number, number],
-  initialMomentum: number,
-  initialAngle: number | undefined,
-  mass: number,
-  charge: number,
-  bField: number,
-  energyLossRate: number,
-  decay: DecayConfig | undefined,
-  bounds: { x: number; y: number } | undefined,
-  onDeath: ParticleProps["onDeath"]
-) {
+export default function Particle({
+  id,
+  eventId,
+  startPosition,
+  initialMomentum,
+  initialAngle,
+  bField,
+  energyLossRate,
+  bounds,
+  mass,
+  charge,
+  color,
+  decay,
+}: ParticleProps) {
+  const { spawnParticles, markParticleDecayed, markParticleFaded } =
+    useEventStore();
+
+  // Stable Three.js objects - memoized to prevent recreation on re-render
+  const geometry = useMemo(() => new THREE.BufferGeometry(), []);
+  const material = useMemo(
+    () => new THREE.LineBasicMaterial({ color, transparent: true, opacity: 1 }),
+    [color]
+  );
+  const line = useMemo(
+    () => new THREE.Line(geometry, material),
+    [geometry, material]
+  );
+
+  // Cleanup Three.js resources on unmount
+  useEffect(() => {
+    return () => {
+      geometry.dispose();
+      material.dispose();
+    };
+  }, [geometry, material]);
+
+  // Physics state - kept in ref for performance (not triggering re-renders)
   const state = useRef<ParticleState>({
     x: startPosition[0],
     y: startPosition[1],
     z: startPosition[2],
     momentum: initialMomentum,
-    angle: initialAngle ?? Math.random() * Math.PI * 2,
+    angle: initialAngle,
     alive: true,
     points: [[startPosition[0], startPosition[1], startPosition[2]]],
     age: 0,
@@ -107,12 +121,48 @@ export function useParticlePhysics(
     fadeDelayRemaining: FADE_DELAY,
   });
 
-  const lineRef = useRef<THREE.Line>(null);
+  // Handle decay - spawn new particles through the store
+  const handleDecay = (
+    position: [number, number, number],
+    momentum: number,
+    angle: number,
+    products: DecayProduct[]
+  ) => {
+    const particlesToSpawn: ParticleSpawnData[] = [];
+
+    for (const product of products) {
+      const particleData = PARTICLE_DATA[product.type];
+      if (!particleData) {
+        console.warn(`Unknown particle type in decay: ${product.type}`);
+        continue;
+      }
+
+      particlesToSpawn.push({
+        type: product.type,
+        parentId: id,
+        startPosition: position,
+        initialMomentum: momentum * product.momentumFraction,
+        initialAngle: angle + (Math.random() - 0.5) * 2 * product.angleOffset,
+        mass: particleData.mass,
+        charge: particleData.charge,
+        color: particleData.color,
+        decay: particleData.decay,
+        bField,
+        energyLossRate,
+        bounds,
+      });
+    }
+
+    if (particlesToSpawn.length > 0) {
+      spawnParticles(eventId, particlesToSpawn);
+    }
+  };
 
   useFrame(() => {
     const s = state.current;
     if (!s.alive) return;
 
+    // Handle fading phase
     if (s.isFading) {
       if (s.fadeDelayRemaining > 0) {
         s.fadeDelayRemaining -= dt;
@@ -124,19 +174,17 @@ export function useParticlePhysics(
 
       if (s.fadeProgress >= 1.0) {
         s.alive = false;
+        markParticleFaded(id);
         return;
       }
 
-      if (lineRef.current?.material) {
-        const mat = lineRef.current.material as THREE.LineBasicMaterial;
-        mat.transparent = true;
-        mat.opacity = 1 - s.fadeProgress;
-      }
-
+      material.opacity = 1 - s.fadeProgress;
       return;
     }
 
+    // Physics simulation
     for (let i = 0; i < STEPS_PER_FRAME; i++) {
+      // Check for radioactive decay
       if (
         decay &&
         s.decayTime !== null &&
@@ -146,37 +194,30 @@ export function useParticlePhysics(
         s.hasDecayed = true;
         s.isFading = true;
         const products = selectDecayChannel(decay.channels);
-        onDeath?.({
-          id,
-          position: [s.x, s.y, s.z],
-          momentum: s.momentum,
-          angle: s.angle,
-          decayProducts: products,
-        });
-        return;
-      }
-
-      if (s.momentum <= MIN_MOMENTUM && !s.isFading) {
-        s.isFading = true;
-        if (!s.hasDecayed) {
-          onDeath?.({
-            id,
-            position: [s.x, s.y, s.z],
-            momentum: s.momentum,
-            angle: s.angle,
-            decayProducts: null,
-          });
+        markParticleDecayed(id);
+        if (products) {
+          handleDecay([s.x, s.y, s.z], s.momentum, s.angle, products);
         }
         return;
       }
 
-      // Relativistic velocity
+      // Check for momentum exhaustion
+      if (s.momentum <= MIN_MOMENTUM && !s.isFading) {
+        s.isFading = true;
+        if (!s.hasDecayed) {
+          markParticleDecayed(id);
+        }
+        return;
+      }
+
+      // Relativistic velocity calculation
       const energy = Math.sqrt(s.momentum * s.momentum + mass * mass);
       const speed = s.momentum / energy;
 
-      // Cyclotron frequency
+      // Cyclotron frequency (Lorentz force in magnetic field)
       const omega = (charge * bField) / energy;
 
+      // Update position and angle
       s.x += Math.cos(s.angle) * speed * dt;
       s.y += Math.sin(s.angle) * speed * dt;
       s.angle += omega * dt;
@@ -185,75 +226,24 @@ export function useParticlePhysics(
 
       s.points.push([s.x, s.y, s.z]);
 
-      // Check viewport bounds if provided
+      // Check viewport bounds
       if (bounds && !s.isFading) {
         if (Math.abs(s.x) > bounds.x || Math.abs(s.y) > bounds.y) {
           s.isFading = true;
           if (!s.hasDecayed) {
-            onDeath?.({
-              id,
-              position: [s.x, s.y, s.z],
-              momentum: s.momentum,
-              angle: s.angle,
-              decayProducts: null,
-            });
+            markParticleDecayed(id);
           }
           return;
         }
       }
     }
 
-    if (lineRef.current) {
-      const positions = new Float32Array(s.points.flat());
-      lineRef.current.geometry.setAttribute(
-        "position",
-        new THREE.BufferAttribute(positions, 3)
-      );
-      lineRef.current.geometry.setDrawRange(0, s.points.length);
-      lineRef.current.geometry.attributes.position.needsUpdate = true;
-    }
+    // Update geometry with new points
+    const positions = new Float32Array(s.points.flat());
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geometry.setDrawRange(0, s.points.length);
+    geometry.attributes.position.needsUpdate = true;
   });
 
-  return { state, lineRef };
-}
-
-let particleIdCounter = 0;
-const generateParticleId = () => `p_${++particleIdCounter}`;
-
-export default function Particle({
-  id,
-  startPosition = [0, 0, 0],
-  initialMomentum = 0.5,
-  initialAngle,
-  bField = 2,
-  energyLossRate = 0.005,
-  bounds,
-  mass,
-  charge,
-  color,
-  decay,
-  onDeath,
-}: ParticleProps) {
-  const particleId = useRef(id ?? generateParticleId());
-
-  const { lineRef } = useParticlePhysics(
-    particleId.current,
-    startPosition,
-    initialMomentum,
-    initialAngle,
-    mass,
-    charge,
-    bField,
-    energyLossRate,
-    decay,
-    bounds,
-    onDeath
-  );
-
-  return (
-    <primitive object={new THREE.Line()} ref={lineRef}>
-      <bufferGeometry />
-      <lineBasicMaterial color={color} transparent={true} opacity={1} />
-    </primitive>
-  );
+  return <primitive object={line} />;
 }
