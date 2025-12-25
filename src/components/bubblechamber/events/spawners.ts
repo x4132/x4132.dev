@@ -1,5 +1,9 @@
 import type { EventType, ParticleSpawnData } from "../../../lib/useEventStore";
 import { PARTICLE_DATA } from "../particles/registry";
+import {
+  GuaranteedVarietySpawner,
+  type ParticleTypeConfig,
+} from "../../../lib/particleRNG";
 
 export interface EventConfig {
   bounds: { x: number; y: number };
@@ -123,6 +127,32 @@ type CosmicRayType =
   | "photon";
 
 /**
+/**
+ * Cosmic ray particle type configurations with weights and minimum frequency guarantees
+ * Weight: Relative spawn probability (higher = more common)
+ * minFrequency: Guaranteed to spawn at least once per N particles
+ */
+const COSMIC_RAY_CONFIGS: ParticleTypeConfig<CosmicRayType>[] = [
+  { type: "muon", weight: 3, minFrequency: 25 }, // Most common
+  { type: "pion", weight: 3, minFrequency: 25 }, // Most common
+  { type: "pion_minus", weight: 2, minFrequency: 25 }, // Common
+  { type: "electron", weight: 2, minFrequency: 25 }, // Common
+  { type: "pion_neutral", weight: 1.5, minFrequency: 25 }, // Moderate
+  { type: "kaon_neutral", weight: 1, minFrequency: 25 }, // Rare
+  { type: "proton", weight: 1, minFrequency: 25 }, // Rare
+  { type: "photon", weight: 1, minFrequency: 25 }, // Rare
+];
+
+/**
+ * Global cosmic ray spawner with guaranteed variety
+ * Persists across events to ensure long-term particle type diversity
+ */
+const cosmicRaySpawner = new GuaranteedVarietySpawner(
+  COSMIC_RAY_CONFIGS,
+  42 // Fixed seed for consistent but varied spawns
+);
+
+/**
  * Spawn a cosmic ray event with varied momentum
  * Momentum categories:
  * - Low: 1-4 GeV (tight spirals for charged particles)
@@ -138,22 +168,10 @@ export function createCosmicRayEvent(
   // Calculate edge spawn position and direction
   const { position, angle } = calculateEdgeSpawn(bounds);
 
-  // Select particle type with weights
-  // Muons and pions are more common, neutrals less so
-  const particleTypes: CosmicRayType[] = [
-    "muon",
-    "muon",
-    "pion",
-    "pion",
-    "pion_minus",
-    "pion_neutral",
-    "electron",
-    "kaon_neutral",
-    "proton",
-    "photon",
-  ];
-  const selectedType =
-    subtype ?? particleTypes[Math.floor(Math.random() * particleTypes.length)];
+  // Select particle type using guaranteed variety spawner
+  // Ensures all particle types spawn at minimum frequency (1 per 25 particles)
+  // Uses weighted random selection with fake RNG for deterministic variety
+  const selectedType = subtype ?? cosmicRaySpawner.selectNext();
 
   // Momentum distribution: mix of low, medium, and high
   // 15% low (8-15), 50% medium (15-40), 35% high (40-100)
@@ -245,3 +263,15 @@ export const EVENT_SPAWNERS: Record<EventType, EventSpawner | null> = {
   muon_pair: null,
   pion_pair: null,
 };
+
+/**
+ * Get cosmic ray spawn statistics for debugging/analysis
+ * Returns object with counts of each particle type spawned
+ */
+export function getCosmicRayStats() {
+  return {
+    stats: cosmicRaySpawner.getStats(),
+    totalSpawned: cosmicRaySpawner.getTotalSpawned(),
+    history: cosmicRaySpawner.getHistory(),
+  };
+}
