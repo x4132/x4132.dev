@@ -5,12 +5,17 @@ const currentURL = Astro.url.pathname;
 
 <header>
     <nav class="flex items-center w-full p-6 space-x-4 text-2xl font-light">
-        <button class={`mr-auto ${currentURL === "/" && "invisible"}`}
-            >Home</button
+        <a
+            href="/"
+            class={`mr-auto hover:opacity-80 transition-opacity ${currentURL === "/" && "invisible"}`}
         >
+            Home
+        </a>
 
-        <button>Blog</button>
-        <button>Tools</button>
-        <button><Search /></button>
+        <a href="/blog" class="hover:opacity-80 transition-opacity">Blog</a>
+        <a href="/tools" class="hover:opacity-80 transition-opacity">Tools</a>
+        <button aria-label="Search" class="hover:opacity-80 transition-opacity">
+            <Search />
+        </button>
     </nav>
 </header>

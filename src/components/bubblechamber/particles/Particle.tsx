@@ -3,12 +3,9 @@ import { useFrame } from "@react-three/fiber";
 import { useRef, useMemo, useEffect } from "react";
 import {
   useEventStore,
-  type DecayConfig,
-  type DecayProduct,
   type ParticleSpawnData,
-  type ParticleType,
 } from "../../../lib/useEventStore";
-import { PARTICLE_DATA } from "./registry";
+import { PARTICLE_DATA, type DecayConfig, type DecayProduct } from "./registry";
 
 export type { DecayProduct, DecayConfig };
 
@@ -44,11 +41,20 @@ interface ParticleState {
 }
 
 const dt = 0.01;
-const FADE_DELAY = 1.5;
-const FADE_DURATION = 3.0;
-const FADE_SPEED = 1;
 const STEPS_PER_FRAME = 5;
 const MIN_MOMENTUM = 0.2;
+const MAX_POINTS = 10000;
+
+/**
+ * Particle fade-out configuration
+ * When a particle dies, it waits `delay` seconds, then fades over `duration` seconds.
+ * `easeOutStrength` adds ease-out effect (0 = linear, higher = faster start)
+ */
+const FADE_CONFIG = {
+  delay: 1.5,
+  duration: 3.0,
+  easeOutStrength: 1.0,
+} as const;
 
 function sampleDecayTime(meanLifetime: number): number {
   return -meanLifetime * Math.log(Math.random());
@@ -68,6 +74,97 @@ function selectDecayChannel(
   return null;
 }
 
+/**
+ * Calculate two-body decay kinematics with momentum conservation.
+ * Uses relativistic kinematics in the center-of-mass frame, then boosts to lab frame.
+ *
+ * For a parent particle with mass M decaying to daughters with masses m1 and m2:
+ * In CM frame: |p*| = sqrt[(M^2 - (m1+m2)^2)(M^2 - (m1-m2)^2)] / (2M)
+ * Daughters go back-to-back in CM frame, then we boost to lab frame.
+ */
+interface DecayKinematics {
+  momentum1: number;
+  angle1: number;
+  momentum2: number;
+  angle2: number;
+}
+
+function calculateTwoBodyDecay(
+  parentMomentum: number,
+  parentAngle: number,
+  parentMass: number,
+  mass1: number,
+  mass2: number
+): DecayKinematics {
+  // Parent energy in lab frame
+  const parentEnergy = Math.sqrt(
+    parentMomentum * parentMomentum + parentMass * parentMass
+  );
+
+  // Parent velocity (beta) and Lorentz factor (gamma)
+  const beta = parentMomentum / parentEnergy;
+  const gamma = parentEnergy / parentMass;
+
+  // Momentum magnitude in CM frame (both daughters have same |p*|)
+  // |p*| = sqrt[(M^2 - (m1+m2)^2)(M^2 - (m1-m2)^2)] / (2M)
+  const M = parentMass;
+  const sumMass = mass1 + mass2;
+  const diffMass = mass1 - mass2;
+  const pStarSq =
+    ((M * M - sumMass * sumMass) * (M * M - diffMass * diffMass)) / (4 * M * M);
+
+  // Handle edge case where decay is kinematically forbidden
+  if (pStarSq <= 0) {
+    // Fall back to simple momentum split
+    return {
+      momentum1: parentMomentum * 0.5,
+      angle1: parentAngle + Math.PI / 6,
+      momentum2: parentMomentum * 0.5,
+      angle2: parentAngle - Math.PI / 6,
+    };
+  }
+
+  const pStar = Math.sqrt(pStarSq);
+
+  // Random decay angle in CM frame (isotropic in 2D)
+  const thetaCM = Math.random() * 2 * Math.PI;
+
+  // Daughter 1 in CM frame
+  const pxCM1 = pStar * Math.cos(thetaCM);
+  const pyCM1 = pStar * Math.sin(thetaCM);
+  const E1CM = Math.sqrt(pStar * pStar + mass1 * mass1);
+
+  // Daughter 2 in CM frame (back-to-back)
+  const pxCM2 = -pxCM1;
+  const pyCM2 = -pyCM1;
+  const E2CM = Math.sqrt(pStar * pStar + mass2 * mass2);
+
+  // Lorentz boost to lab frame (boost along parent direction)
+  // p_parallel' = gamma * (p_parallel + beta * E)
+  // p_perp' = p_perp
+  // We rotate so parent moves along x, boost, then rotate back
+
+  // Daughter 1 lab frame
+  const px1Lab = gamma * (pxCM1 + beta * E1CM);
+  const py1Lab = pyCM1;
+  const p1Lab = Math.sqrt(px1Lab * px1Lab + py1Lab * py1Lab);
+  const angle1Local = Math.atan2(py1Lab, px1Lab);
+
+  // Daughter 2 lab frame
+  const px2Lab = gamma * (pxCM2 + beta * E2CM);
+  const py2Lab = pyCM2;
+  const p2Lab = Math.sqrt(px2Lab * px2Lab + py2Lab * py2Lab);
+  const angle2Local = Math.atan2(py2Lab, px2Lab);
+
+  // Rotate back to lab frame (add parent angle)
+  return {
+    momentum1: p1Lab,
+    angle1: parentAngle + angle1Local,
+    momentum2: p2Lab,
+    angle2: parentAngle + angle2Local,
+  };
+}
+
 export default function Particle({
   id,
   eventId,
@@ -82,8 +179,17 @@ export default function Particle({
   color,
   decay,
 }: ParticleProps) {
-  const { spawnParticles, markParticleDecayed, markParticleFaded } =
-    useEventStore();
+  const {
+    spawnParticles,
+    markParticleDecayed,
+    markParticleStopped,
+    markParticleExited,
+    markParticleFaded,
+  } = useEventStore();
+
+  // Pre-allocated geometry buffer for performance (avoids GC pressure)
+  const positionsBuffer = useRef(new Float32Array(MAX_POINTS * 3));
+  const bufferAttribute = useRef<THREE.BufferAttribute | null>(null);
 
   // Stable Three.js objects - memoized to prevent recreation on re-render
   const geometry = useMemo(() => new THREE.BufferGeometry(), []);
@@ -118,39 +224,92 @@ export default function Particle({
     hasDecayed: false,
     isFading: false,
     fadeProgress: 0,
-    fadeDelayRemaining: FADE_DELAY,
+    fadeDelayRemaining: FADE_CONFIG.delay,
   });
 
   // Handle decay - spawn new particles through the store
+  // Uses proper relativistic kinematics for two-body decays
   const handleDecay = (
     position: [number, number, number],
-    momentum: number,
-    angle: number,
+    parentMomentum: number,
+    parentAngle: number,
     products: DecayProduct[]
   ) => {
     const particlesToSpawn: ParticleSpawnData[] = [];
 
-    for (const product of products) {
-      const particleData = PARTICLE_DATA[product.type];
-      if (!particleData) {
-        console.warn(`Unknown particle type in decay: ${product.type}`);
-        continue;
+    // Two-body decay: use proper kinematics with momentum conservation
+    if (products.length === 2) {
+      const data1 = PARTICLE_DATA[products[0].type];
+      const data2 = PARTICLE_DATA[products[1].type];
+
+      if (!data1 || !data2) {
+        console.warn("Unknown particle type in two-body decay");
+        return;
       }
 
+      const kinematics = calculateTwoBodyDecay(
+        parentMomentum,
+        parentAngle,
+        mass, // parent mass from component props
+        data1.mass,
+        data2.mass
+      );
+
       particlesToSpawn.push({
-        type: product.type,
+        type: products[0].type,
         parentId: id,
         startPosition: position,
-        initialMomentum: momentum * product.momentumFraction,
-        initialAngle: angle + (Math.random() - 0.5) * 2 * product.angleOffset,
-        mass: particleData.mass,
-        charge: particleData.charge,
-        color: particleData.color,
-        decay: particleData.decay,
+        initialMomentum: kinematics.momentum1,
+        initialAngle: kinematics.angle1,
+        mass: data1.mass,
+        charge: data1.charge,
+        color: data1.color,
+        decay: data1.decay,
         bField,
         energyLossRate,
         bounds,
       });
+
+      particlesToSpawn.push({
+        type: products[1].type,
+        parentId: id,
+        startPosition: position,
+        initialMomentum: kinematics.momentum2,
+        initialAngle: kinematics.angle2,
+        mass: data2.mass,
+        charge: data2.charge,
+        color: data2.color,
+        decay: data2.decay,
+        bField,
+        energyLossRate,
+        bounds,
+      });
+    } else {
+      // Single-body or multi-body decay: use original momentum fraction approach
+      // (e.g., muon -> electron + invisible neutrinos)
+      for (const product of products) {
+        const particleData = PARTICLE_DATA[product.type];
+        if (!particleData) {
+          console.warn(`Unknown particle type in decay: ${product.type}`);
+          continue;
+        }
+
+        particlesToSpawn.push({
+          type: product.type,
+          parentId: id,
+          startPosition: position,
+          initialMomentum: parentMomentum * product.momentumFraction,
+          initialAngle:
+            parentAngle + (Math.random() - 0.5) * 2 * product.angleOffset,
+          mass: particleData.mass,
+          charge: particleData.charge,
+          color: particleData.color,
+          decay: particleData.decay,
+          bField,
+          energyLossRate,
+          bounds,
+        });
+      }
     }
 
     if (particlesToSpawn.length > 0) {
@@ -169,8 +328,10 @@ export default function Particle({
         return;
       }
 
-      const fadeIncrement = dt / FADE_DURATION;
-      s.fadeProgress += fadeIncrement * (1 + FADE_SPEED * (1 - s.fadeProgress));
+      const fadeIncrement = dt / FADE_CONFIG.duration;
+      s.fadeProgress +=
+        fadeIncrement *
+        (1 + FADE_CONFIG.easeOutStrength * (1 - s.fadeProgress));
 
       if (s.fadeProgress >= 1.0) {
         s.alive = false;
@@ -205,7 +366,7 @@ export default function Particle({
       if (s.momentum <= MIN_MOMENTUM && !s.isFading) {
         s.isFading = true;
         if (!s.hasDecayed) {
-          markParticleDecayed(id);
+          markParticleStopped(id);
         }
         return;
       }
@@ -221,7 +382,13 @@ export default function Particle({
       s.x += Math.cos(s.angle) * speed * dt;
       s.y += Math.sin(s.angle) * speed * dt;
       s.angle += omega * dt;
-      s.momentum *= 1 - energyLossRate;
+
+      // Only apply energy loss to charged particles (ionization)
+      // Massless/neutral particles like photons don't ionize the medium
+      if (charge !== 0) {
+        s.momentum *= 1 - energyLossRate;
+      }
+
       s.age += dt;
 
       s.points.push([s.x, s.y, s.z]);
@@ -231,18 +398,30 @@ export default function Particle({
         if (Math.abs(s.x) > bounds.x || Math.abs(s.y) > bounds.y) {
           s.isFading = true;
           if (!s.hasDecayed) {
-            markParticleDecayed(id);
+            markParticleExited(id);
           }
           return;
         }
       }
     }
 
-    // Update geometry with new points
-    const positions = new Float32Array(s.points.flat());
-    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geometry.setDrawRange(0, s.points.length);
-    geometry.attributes.position.needsUpdate = true;
+    // Update geometry with new points using pre-allocated buffer
+    const buffer = positionsBuffer.current;
+    const pointCount = Math.min(s.points.length, MAX_POINTS);
+    for (let i = 0; i < pointCount; i++) {
+      buffer[i * 3] = s.points[i][0];
+      buffer[i * 3 + 1] = s.points[i][1];
+      buffer[i * 3 + 2] = s.points[i][2];
+    }
+
+    if (!bufferAttribute.current) {
+      bufferAttribute.current = new THREE.BufferAttribute(buffer, 3);
+      bufferAttribute.current.setUsage(THREE.DynamicDrawUsage);
+      geometry.setAttribute("position", bufferAttribute.current);
+    }
+
+    bufferAttribute.current.needsUpdate = true;
+    geometry.setDrawRange(0, pointCount);
   });
 
   return <primitive object={line} />;
