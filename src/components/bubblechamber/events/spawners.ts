@@ -127,7 +127,6 @@ type CosmicRayType =
   | "photon";
 
 /**
-/**
  * Cosmic ray particle type configurations with weights and minimum frequency guarantees
  * Weight: Relative spawn probability (higher = more common)
  * minFrequency: Guaranteed to spawn at least once per N particles
@@ -263,6 +262,22 @@ export const EVENT_SPAWNERS: Record<EventType, EventSpawner | null> = {
   muon_pair: null,
   pion_pair: null,
 };
+
+/**
+ * Type guard to check if an event type has a valid spawner
+ */
+export function hasValidSpawner(
+  eventType: EventType
+): eventType is EventType & { spawner: EventSpawner } {
+  return EVENT_SPAWNERS[eventType] !== null;
+}
+
+/**
+ * Get spawner for event type, returns null if not implemented
+ */
+export function getSpawner(eventType: EventType): EventSpawner | null {
+  return EVENT_SPAWNERS[eventType];
+}
 
 /**
  * Get cosmic ray spawn statistics for debugging/analysis

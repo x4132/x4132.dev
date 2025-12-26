@@ -1,5 +1,17 @@
 import { create } from "zustand";
 
+// Re-export particle types from registry (single source of truth)
+export type {
+  ParticleType,
+  DecayProduct,
+  DecayConfig,
+} from "../components/bubblechamber/particles/registry";
+
+import type {
+  ParticleType,
+  DecayConfig,
+} from "../components/bubblechamber/particles/registry";
+
 export type EventType =
   | "pair_production"
   | "cosmic_ray"
@@ -8,33 +20,20 @@ export type EventType =
   | "muon_pair"
   | "pion_pair";
 
-export type ParticleType =
-  | "electron"
-  | "positron"
-  | "muon"
-  | "antimuon"
-  | "pion"
-  | "pion_minus"
-  | "pion_neutral"
-  | "kaon_neutral"
-  | "photon"
-  | "proton";
-
-export type ParticleStatus = "active" | "decayed" | "faded";
-
-export interface DecayProduct {
-  type: ParticleType;
-  momentumFraction: number;
-  angleOffset: number;
-}
-
-export interface DecayConfig {
-  meanLifetime: number;
-  channels: Array<{
-    probability: number;
-    products: DecayProduct[];
-  }>;
-}
+/**
+ * Particle lifecycle status:
+ * - active: Currently simulating physics
+ * - decayed: Underwent radioactive decay (spawned daughter particles)
+ * - stopped: Lost momentum below threshold
+ * - exited: Left viewport bounds
+ * - faded: Visual fade complete, ready for garbage collection
+ */
+export type ParticleStatus =
+  | "active"
+  | "decayed"
+  | "stopped"
+  | "exited"
+  | "faded";
 
 /**
  * Static particle properties (don't change after creation)
@@ -98,6 +97,8 @@ interface EventStore {
   // Particle lifecycle
   spawnParticles: (eventId: string, particles: ParticleSpawnData[]) => string[];
   markParticleDecayed: (particleId: string) => void;
+  markParticleStopped: (particleId: string) => void;
+  markParticleExited: (particleId: string) => void;
   markParticleFaded: (particleId: string) => void;
 
   // Queries
@@ -106,11 +107,12 @@ interface EventStore {
   getAllActiveParticles: () => ParticleRecord[];
 }
 
-let eventCounter = 0;
-let particleCounter = 0;
-
-const generateEventId = () => `event_${++eventCounter}`;
-const generateParticleId = () => `particle_${++particleCounter}`;
+/**
+ * Generate unique IDs using crypto.randomUUID()
+ * Uses short 8-character prefix from UUID for readability
+ */
+const generateEventId = () => `event_${crypto.randomUUID().slice(0, 8)}`;
+const generateParticleId = () => `particle_${crypto.randomUUID().slice(0, 8)}`;
 
 export const useEventStore = create<EventStore>((set, get) => ({
   events: new Map(),
@@ -194,6 +196,28 @@ export const useEventStore = create<EventStore>((set, get) => ({
       const particle = particles.get(particleId);
       if (particle && particle.status === "active") {
         particles.set(particleId, { ...particle, status: "decayed" });
+      }
+      return { particles };
+    });
+  },
+
+  markParticleStopped: (particleId) => {
+    set((state) => {
+      const particles = new Map(state.particles);
+      const particle = particles.get(particleId);
+      if (particle && particle.status === "active") {
+        particles.set(particleId, { ...particle, status: "stopped" });
+      }
+      return { particles };
+    });
+  },
+
+  markParticleExited: (particleId) => {
+    set((state) => {
+      const particles = new Map(state.particles);
+      const particle = particles.get(particleId);
+      if (particle && particle.status === "active") {
+        particles.set(particleId, { ...particle, status: "exited" });
       }
       return { particles };
     });
