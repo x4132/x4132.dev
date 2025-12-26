@@ -131,83 +131,81 @@ const KAON_NEUTRAL_DECAY: DecayConfig = {
   ],
 };
 
-export const decays: {
-  [particleType: ParticleType]: DecayConfig
-} = {
-}
-
-// /**
-//  * Registry of all particle types and their physics properties.
-//  * Adding a new particle requires:
-//  * 1. Add to ParticleType union above
-//  * 2. Add entry here with mass, charge, color, and optional decay config
-//  */
-// export const PARTICLE_DATA: Record<ParticleType, ParticleData> = {
-//   electron: {
-//     mass: 0.000511,
-//     charge: -1,
-//     color: "#88ccff",
-//     decay: undefined,
-//   },
-//   positron: {
-//     mass: 0.000511,
-//     charge: 1,
-//     color: "#ff88cc",
-//     decay: undefined,
-//   },
-//   muon: {
-//     mass: 0.1057,
-//     charge: -1,
-//     color: "#88ffcc",
-//     decay: MUON_DECAY,
-//   },
-//   antimuon: {
-//     mass: 0.1057,
-//     charge: 1,
-//     color: "#ffcc88",
-//     decay: ANTIMUON_DECAY,
-//   },
-//   pion: {
-//     mass: 0.1396,
-//     charge: 1,
-//     color: "#ccff88",
-//     decay: PION_PLUS_DECAY,
-//   },
-//   pion_minus: {
-//     mass: 0.1396,
-//     charge: -1,
-//     color: "#88ff88",
-//     decay: PION_MINUS_DECAY,
-//   },
-//   pion_neutral: {
-//     mass: 0.135,
-//     charge: 0,
-//     color: "#ffff88",
-//     decay: PION_NEUTRAL_DECAY,
-//   },
-//   kaon_neutral: {
-//     mass: 0.498,
-//     charge: 0,
-//     color: "#aa88ff",
-//     decay: KAON_NEUTRAL_DECAY,
-//   },
-//   photon: {
-//     mass: 0,
-//     charge: 0,
-//     color: "#ffffaa",
-//     decay: undefined,
-//   },
-//   proton: {
-//     mass: 0.9383,
-//     charge: 1,
-//     color: "#ff8888",
-//     decay: undefined,
-//   },
-// };
-
-// /**
-//  * Helper to get spawn data for a particle type
-//  */
-// export function getParticleData(type: ParticleType): ParticleData {
-//   return PARTICLE_DATA[type];
-// }
+/**
+ * Registry of all particle types and their physics properties.
+ * Adding a new particle requires:
+ * 1. Add to ParticleType union above
+ * 2. Add entry here with type, mass, charge, color, and optional decay config
+ */
+export const PARTICLE_DATA: Record<ParticleType, ParticleData> = {
+  electron: {
+    type: "electron",
+    mass: 0.000511,
+    charge: -1,
+    color: "#88ccff",
+    decay: undefined,
+  },
+  positron: {
+    type: "positron",
+    mass: 0.000511,
+    charge: 1,
+    color: "#ff88cc",
+    decay: undefined,
+  },
+  muon: {
+    type: "muon",
+    mass: 0.1057,
+    charge: -1,
+    color: "#88ffcc",
+    decay: MUON_DECAY,
+  },
+  antimuon: {
+    type: "antimuon",
+    mass: 0.1057,
+    charge: 1,
+    color: "#ffcc88",
+    decay: ANTIMUON_DECAY,
+  },
+  pion: {
+    type: "pion",
+    mass: 0.1396,
+    charge: 1,
+    color: "#ccff88",
+    decay: PION_PLUS_DECAY,
+  },
+  pion_minus: {
+    type: "pion_minus",
+    mass: 0.1396,
+    charge: -1,
+    color: "#88ff88",
+    decay: PION_MINUS_DECAY,
+  },
+  pion_neutral: {
+    type: "pion_neutral",
+    mass: 0.135,
+    charge: 0,
+    color: "#ffff88",
+    decay: PION_NEUTRAL_DECAY,
+  },
+  kaon_neutral: {
+    type: "kaon_neutral",
+    mass: 0.498,
+    charge: 0,
+    color: "#aa88ff",
+    decay: KAON_NEUTRAL_DECAY,
+  },
+  photon: {
+    type: "photon",
+    mass: 0,
+    charge: 0,
+    color: "#ffffaa",
+    decay: undefined,
+  },
+  proton: {
+    type: "proton",
+    mass: 0.9383,
+    charge: 1,
+    color: "#ff8888",
+    decay: undefined,
+  },
+};
