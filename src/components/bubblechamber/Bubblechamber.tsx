@@ -60,7 +60,7 @@ function ParticleRenderer() {
   );
 }
 
-function useEventSpawner() {
+export default function Bubblechamber() {
   const { spawnInterval, maxActiveEvents, initialEvents } = SPAWNER_CONFIG;
 
   const spawnEvent = useEventStore((s) => s.spawnEvent);
@@ -88,10 +88,6 @@ function useEventSpawner() {
     const interval = setInterval(spawnNewEvent, spawnInterval);
     return () => clearInterval(interval);
   }, [spawnNewEvent, spawnInterval, initialEvents]);
-}
-
-export default function Bubblechamber() {
-  useEventSpawner();
 
   return (
     <BubblechamberErrorBoundary>
@@ -104,4 +100,3 @@ export default function Bubblechamber() {
     </BubblechamberErrorBoundary>
   );
 }
-
