@@ -1,34 +1,13 @@
 import { Canvas } from "@react-three/fiber";
 import { useEffect, useCallback } from "react";
 import { useShallow } from "zustand/shallow";
-import { useEventStore, type EventType } from "./useEventStore";
+import { useEventStore } from "./useEventStore";
 import Particle from "./particles/Particle";
-import { EVENT_SPAWNERS, hasValidSpawner } from "./events/spawners";
+import { EVENT_SPAWNERS, selectEventType } from "./events/spawners";
 import { BubblechamberErrorBoundary } from "./ErrorBoundary";
-import { CHAMBER_CONFIG, EVENT_WEIGHTS } from "./config";
+import { CHAMBER_CONFIG } from "./config";
 
 const { spawner: SPAWNER_CONFIG } = CHAMBER_CONFIG;
-
-function selectEventType(): EventType {
-  const activeEvents = EVENT_WEIGHTS.filter(
-    (e) => e.weight > 0 && hasValidSpawner(e.type)
-  );
-
-  if (activeEvents.length === 0) return "pair_production";
-
-  const totalWeight = activeEvents.reduce((sum, e) => sum + e.weight, 0);
-  const rand = Math.random() * totalWeight;
-  let cumulative = 0;
-
-  for (const event of activeEvents) {
-    cumulative += event.weight;
-    if (rand < cumulative) {
-      return event.type;
-    }
-  }
-
-  return activeEvents[0].type;
-}
 
 function ParticleRenderer() {
   const particles = useEventStore(
