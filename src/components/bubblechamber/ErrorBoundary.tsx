@@ -9,10 +9,6 @@ interface State {
   hasError: boolean;
 }
 
-/**
- * Error boundary for the bubble chamber simulation.
- * Catches errors from physics calculations (NaN, Infinity) and Three.js rendering.
- */
 export class BubblechamberErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };
 

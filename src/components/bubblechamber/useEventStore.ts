@@ -20,14 +20,6 @@ export type EventType =
   | "muon_pair"
   | "pion_pair";
 
-/**
- * Particle lifecycle status:
- * - active: Currently simulating physics
- * - decayed: Underwent radioactive decay (spawned daughter particles)
- * - stopped: Lost momentum below threshold
- * - exited: Left viewport bounds
- * - faded: Visual fade complete, ready for garbage collection
- */
 export type ParticleStatus =
   | "active"
   | "decayed"
@@ -35,9 +27,6 @@ export type ParticleStatus =
   | "exited"
   | "faded";
 
-/**
- * Static particle properties (don't change after creation)
- */
 export interface ParticleRecord {
   id: string;
   eventId: string;
@@ -45,16 +34,13 @@ export interface ParticleRecord {
   type: ParticleType;
   status: ParticleStatus;
   createdAt: number;
-  // Initial conditions for rendering
   startPosition: [number, number, number];
   initialMomentum: number;
   initialAngle: number;
-  // Physics properties
   mass: number;
   charge: number;
   color: string;
   decay: DecayConfig | undefined;
-  // Simulation parameters
   bField: number;
   energyLossRate: number;
   bounds: { x: number; y: number } | undefined;
@@ -68,9 +54,6 @@ export interface PhysicsEvent {
   particleIds: string[];
 }
 
-/**
- * Data needed to spawn a new particle
- */
 export interface ParticleSpawnData {
   type: ParticleType;
   parentId?: string | null;
@@ -90,27 +73,20 @@ interface EventStore {
   events: Map<string, PhysicsEvent>;
   particles: Map<string, ParticleRecord>;
 
-  // Event lifecycle
   spawnEvent: (type: EventType, position: [number, number, number]) => string;
   cleanup: (eventId: string) => void;
 
-  // Particle lifecycle
   spawnParticles: (eventId: string, particles: ParticleSpawnData[]) => string[];
   markParticleDecayed: (particleId: string) => void;
   markParticleStopped: (particleId: string) => void;
   markParticleExited: (particleId: string) => void;
   markParticleFaded: (particleId: string) => void;
 
-  // Queries
   getActiveEvents: () => PhysicsEvent[];
   getEventParticles: (eventId: string) => ParticleRecord[];
   getAllActiveParticles: () => ParticleRecord[];
 }
 
-/**
- * Generate unique IDs using crypto.randomUUID()
- * Uses short 8-character prefix from UUID for readability
- */
 const generateEventId = () => `event_${crypto.randomUUID().slice(0, 8)}`;
 const generateParticleId = () => `particle_${crypto.randomUUID().slice(0, 8)}`;
 
@@ -231,10 +207,9 @@ export const useEventStore = create<EventStore>((set, get) => ({
       const particle = particles.get(particleId);
       if (!particle) return state;
 
-      // Mark particle as faded
       particles.set(particleId, { ...particle, status: "faded" });
 
-      // Check if all particles in the event are faded (garbage collection)
+      // Garbage collect event when all particles faded
       const event = events.get(particle.eventId);
       if (event) {
         const allFaded = event.particleIds.every((id) => {
@@ -243,7 +218,6 @@ export const useEventStore = create<EventStore>((set, get) => ({
         });
 
         if (allFaded) {
-          // Clean up the entire event
           for (const id of event.particleIds) {
             particles.delete(id);
           }
