@@ -5,12 +5,12 @@ export type {
   ParticleType,
   DecayProduct,
   DecayConfig,
-} from "../components/bubblechamber/particles/registry";
+} from "./particles/registry";
 
 import type {
   ParticleType,
   DecayConfig,
-} from "../components/bubblechamber/particles/registry";
+} from "./particles/registry";
 
 export type EventType =
   | "pair_production"

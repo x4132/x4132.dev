@@ -4,7 +4,7 @@ import { useRef, useMemo, useEffect } from "react";
 import {
   useEventStore,
   type ParticleSpawnData,
-} from "../../../lib/useEventStore";
+} from "../useEventStore";
 import { PARTICLE_DATA, type DecayConfig, type DecayProduct } from "./registry";
 
 export type { DecayProduct, DecayConfig };

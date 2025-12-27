@@ -3,7 +3,6 @@ import type {
   DecayConfig,
 } from "@/components/bubblechamber/particles/registry";
 import type { Vector3 } from "three";
-import { create } from "zustand";
 
 export type EventType =
   | "pair_production"
@@ -42,13 +41,3 @@ export type Particle = {
   initialMomentum: number;
   initialAngle: number; // Radians
 };
-
-type Events = {
-  events: Map<string, ParticleEvent>;
-  particles: Map<string, Particle>;
-};
-
-export const useEvents = create((set, get) => ({
-  events: new Map(),
-  particles: new Map(),
-}));

@@ -39,10 +39,10 @@ export class GuaranteedVarietySpawner<T extends string> {
   private spawnHistory: T[] = [];
   private lastSpawnIndex: Map<T, number> = new Map();
   private totalWeight: number;
-  private particleTypes: ParticleTypeConfig<T>[];
+  private particleTypes: readonly ParticleTypeConfig<T>[];
 
   constructor(
-    particleTypes: ParticleTypeConfig<T>[],
+    particleTypes: readonly ParticleTypeConfig<T>[],
     seed: number = Date.now()
   ) {
     this.rng = new SeededRNG(seed);
