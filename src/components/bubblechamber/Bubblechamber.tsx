@@ -97,7 +97,7 @@ export default function Bubblechamber() {
     <BubblechamberErrorBoundary>
       <Canvas
         camera={{ position: [0, 0, 5], fov: 75 }}
-        style={{ background: "#0F131C" }}
+        style={{ background: "var(--background)" }}
       >
         <ParticleRenderer />
       </Canvas>
