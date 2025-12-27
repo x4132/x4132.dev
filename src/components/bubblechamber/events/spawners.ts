@@ -1,6 +1,11 @@
 import type { EventType, ParticleSpawnData } from "../useEventStore";
 import { PARTICLE_DATA, type ParticleType } from "../particles/registry";
-import { CHAMBER_CONFIG, COSMIC_RAY_CONFIGS, type CosmicRayType } from "../config";
+import {
+  CHAMBER_CONFIG,
+  COSMIC_RAY_CONFIGS,
+  EVENT_WEIGHTS,
+  type CosmicRayType,
+} from "../config";
 import { GuaranteedVarietySpawner } from "../utils/particleRNG";
 
 const { bounds, bField } = CHAMBER_CONFIG;
@@ -13,7 +18,10 @@ export interface SpawnResult {
 
 function createParticle(
   type: ParticleType,
-  overrides: Omit<ParticleSpawnData, "type" | "mass" | "charge" | "color" | "decay">
+  overrides: Omit<
+    ParticleSpawnData,
+    "type" | "mass" | "charge" | "color" | "decay"
+  >
 ): ParticleSpawnData {
   const data = PARTICLE_DATA[type];
   return { ...data, ...overrides, type };
@@ -23,7 +31,6 @@ function createParticle(
 export function createPairProductionEvent(
   position?: [number, number, number]
 ): Omit<SpawnResult, "eventId"> {
-
   const eventPosition: [number, number, number] = position ?? [
     (Math.random() - 0.5) * 2 * bounds.x,
     (Math.random() - 0.5) * 2 * bounds.y,
@@ -159,6 +166,27 @@ export function hasValidSpawner(
   eventType: EventType
 ): eventType is EventType & { spawner: EventSpawner } {
   return EVENT_SPAWNERS[eventType] !== null;
+}
+
+export function selectEventType(): EventType {
+  const activeEvents = EVENT_WEIGHTS.filter(
+    (e) => e.weight > 0 && hasValidSpawner(e.type)
+  );
+
+  if (activeEvents.length === 0) return "pair_production";
+
+  const totalWeight = activeEvents.reduce((sum, e) => sum + e.weight, 0);
+  const rand = Math.random() * totalWeight;
+  let cumulative = 0;
+
+  for (const event of activeEvents) {
+    cumulative += event.weight;
+    if (rand < cumulative) {
+      return event.type;
+    }
+  }
+
+  return activeEvents[0].type;
 }
 
 export function getSpawner(eventType: EventType): EventSpawner | null {
