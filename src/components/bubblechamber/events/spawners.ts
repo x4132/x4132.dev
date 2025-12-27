@@ -1,14 +1,9 @@
-import type { EventType, ParticleSpawnData } from "../../../lib/useEventStore";
-import { PARTICLE_DATA } from "../particles/registry";
-import {
-  GuaranteedVarietySpawner,
-  type ParticleTypeConfig,
-} from "../../../lib/particleRNG";
+import type { EventType, ParticleSpawnData } from "../useEventStore";
+import { PARTICLE_DATA, type ParticleType } from "../particles/registry";
+import { CHAMBER_CONFIG, COSMIC_RAY_CONFIGS, type CosmicRayType } from "../config";
+import { GuaranteedVarietySpawner } from "../utils/particleRNG";
 
-export interface EventConfig {
-  bounds: { x: number; y: number };
-  bField: number;
-}
+const { bounds, bField } = CHAMBER_CONFIG;
 
 export interface SpawnResult {
   eventId: string;
@@ -16,61 +11,51 @@ export interface SpawnResult {
   particles: ParticleSpawnData[];
 }
 
+/** Helper to create particle spawn data with registry defaults */
+function createParticle(
+  type: ParticleType,
+  overrides: Omit<ParticleSpawnData, "type" | "mass" | "charge" | "color" | "decay">
+): ParticleSpawnData {
+  const data = PARTICLE_DATA[type];
+  return { ...data, ...overrides, type };
+}
+
 /**
  * Spawn a pair production event (gamma -> e+ e-)
  */
 export function createPairProductionEvent(
-  config: EventConfig,
   position?: [number, number, number]
 ): Omit<SpawnResult, "eventId"> {
-  const { bounds, bField } = config;
 
-  // Random position if not provided
   const eventPosition: [number, number, number] = position ?? [
     (Math.random() - 0.5) * 2 * bounds.x,
     (Math.random() - 0.5) * 2 * bounds.y,
     0,
   ];
 
-  // Calculate initial conditions with energy asymmetry
   const electronFraction = 0.4 + Math.random() * 0.2;
-  const positronFraction = 1 - electronFraction;
-
   const energyVariation = 0.5 + Math.random() * 5;
   const totalMomentum = 3 * energyVariation;
   const baseAngle = Math.random() * Math.PI * 2;
   const angleSpread = (Math.random() * Math.PI) / 8;
 
-  const electronData = PARTICLE_DATA.electron;
-  const positronData = PARTICLE_DATA.positron;
-
   const particles: ParticleSpawnData[] = [
-    {
-      type: "electron",
+    createParticle("electron", {
       startPosition: eventPosition,
       initialMomentum: totalMomentum * electronFraction,
       initialAngle: baseAngle - angleSpread,
-      mass: electronData.mass,
-      charge: electronData.charge,
-      color: electronData.color,
-      decay: electronData.decay,
       bField,
       energyLossRate: 0.005,
       bounds,
-    },
-    {
-      type: "positron",
+    }),
+    createParticle("positron", {
       startPosition: eventPosition,
-      initialMomentum: totalMomentum * positronFraction,
+      initialMomentum: totalMomentum * (1 - electronFraction),
       initialAngle: baseAngle + angleSpread,
-      mass: positronData.mass,
-      charge: positronData.charge,
-      color: positronData.color,
-      decay: positronData.decay,
       bField,
       energyLossRate: 0.005,
       bounds,
-    },
+    }),
   ];
 
   return { position: eventPosition, particles };
@@ -116,31 +101,7 @@ function calculateEdgeSpawn(bounds: { x: number; y: number }): {
   return { position, angle };
 }
 
-type CosmicRayType =
-  | "muon"
-  | "pion"
-  | "pion_minus"
-  | "pion_neutral"
-  | "electron"
-  | "kaon_neutral"
-  | "proton"
-  | "photon";
 
-/**
- * Cosmic ray particle type configurations with weights and minimum frequency guarantees
- * Weight: Relative spawn probability (higher = more common)
- * minFrequency: Guaranteed to spawn at least once per N particles
- */
-const COSMIC_RAY_CONFIGS: ParticleTypeConfig<CosmicRayType>[] = [
-  { type: "muon", weight: 3, minFrequency: 25 }, // Most common
-  { type: "pion", weight: 3, minFrequency: 25 }, // Most common
-  { type: "pion_minus", weight: 2, minFrequency: 25 }, // Common
-  { type: "electron", weight: 2, minFrequency: 25 }, // Common
-  { type: "pion_neutral", weight: 1.5, minFrequency: 25 }, // Moderate
-  { type: "kaon_neutral", weight: 1, minFrequency: 25 }, // Rare
-  { type: "proton", weight: 1, minFrequency: 25 }, // Rare
-  { type: "photon", weight: 1, minFrequency: 25 }, // Rare
-];
 
 /**
  * Global cosmic ray spawner with guaranteed variety
@@ -159,11 +120,8 @@ const cosmicRaySpawner = new GuaranteedVarietySpawner(
  * - High: 12-25 GeV (nearly straight tracks)
  */
 export function createCosmicRayEvent(
-  config: EventConfig,
   subtype?: CosmicRayType
 ): Omit<SpawnResult, "eventId"> {
-  const { bounds, bField } = config;
-
   // Calculate edge spawn position and direction
   const { position, angle } = calculateEdgeSpawn(bounds);
 
@@ -188,23 +146,17 @@ export function createCosmicRayEvent(
   }
 
   // Scale momentum based on particle mass (heavier particles need more momentum)
-  const particleData = PARTICLE_DATA[selectedType];
-  const momentum = baseMomentum * (1 + particleData.mass * 0.5);
+  const momentum = baseMomentum * (1 + PARTICLE_DATA[selectedType].mass * 0.5);
 
   const particles: ParticleSpawnData[] = [
-    {
-      type: selectedType,
+    createParticle(selectedType, {
       startPosition: position,
       initialMomentum: momentum,
       initialAngle: angle,
-      mass: particleData.mass,
-      charge: particleData.charge,
-      color: particleData.color,
-      decay: particleData.decay,
       bField,
       energyLossRate: 0.002,
       bounds,
-    },
+    }),
   ];
 
   return { position, particles };
@@ -214,33 +166,21 @@ export function createCosmicRayEvent(
  * Spawn a kaon decay event - K⁰ entering from viewport edge
  * Creates characteristic V-pattern when K⁰ decays to π⁺ + π⁻
  */
-export function createKaonDecayEvent(
-  config: EventConfig
-): Omit<SpawnResult, "eventId"> {
-  const { bounds, bField } = config;
-
+export function createKaonDecayEvent(): Omit<SpawnResult, "eventId"> {
   // Calculate edge spawn position and direction
   const { position, angle } = calculateEdgeSpawn(bounds);
 
-  // Kaons typically have medium-high momentum
   const momentum = 25 + Math.random() * 50;
 
-  const particleData = PARTICLE_DATA.kaon_neutral;
-
   const particles: ParticleSpawnData[] = [
-    {
-      type: "kaon_neutral",
+    createParticle("kaon_neutral", {
       startPosition: position,
       initialMomentum: momentum,
       initialAngle: angle,
-      mass: particleData.mass,
-      charge: particleData.charge,
-      color: particleData.color,
-      decay: particleData.decay,
       bField,
-      energyLossRate: 0.001, // Lower energy loss for neutral particle
+      energyLossRate: 0.001,
       bounds,
-    },
+    }),
   ];
 
   return { position, particles };
@@ -249,9 +189,7 @@ export function createKaonDecayEvent(
 /**
  * Event spawner registry
  */
-export type EventSpawner = (
-  config: EventConfig
-) => Omit<SpawnResult, "eventId">;
+export type EventSpawner = () => Omit<SpawnResult, "eventId">;
 
 export const EVENT_SPAWNERS: Record<EventType, EventSpawner | null> = {
   pair_production: createPairProductionEvent,

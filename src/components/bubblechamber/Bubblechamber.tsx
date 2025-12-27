@@ -1,38 +1,13 @@
 import { Canvas } from "@react-three/fiber";
-import { useEffect, useCallback, useMemo, useRef } from "react";
+import { useEffect, useCallback } from "react";
 import { useShallow } from "zustand/shallow";
 import { useEventStore, type EventType } from "./useEventStore";
 import Particle from "./particles/Particle";
-import {
-  EVENT_SPAWNERS,
-  hasValidSpawner,
-  type EventConfig,
-} from "./events/spawners";
+import { EVENT_SPAWNERS, hasValidSpawner } from "./events/spawners";
 import { BubblechamberErrorBoundary } from "./ErrorBoundary";
+import { CHAMBER_CONFIG, EVENT_WEIGHTS } from "./config";
 
-const INITIAL_EVENTS = 5;
-
-interface BubblechamberProps {
-  spawnInterval?: number;
-  maxActiveEvents?: number;
-  bounds?: { x: number; y: number };
-  bField?: number;
-}
-
-interface EventWeight {
-  type: EventType;
-  weight: number;
-}
-
-const EVENT_WEIGHTS: EventWeight[] = [
-  { type: "pair_production", weight: 0.1 },
-  { type: "cosmic_ray", weight: 0.9 },
-  // Future events with 0 weight (disabled)
-  { type: "kaon_decay", weight: 0 },
-  { type: "v_event", weight: 0 },
-  { type: "muon_pair", weight: 0 },
-  { type: "pion_pair", weight: 0 },
-];
+const { spawner: SPAWNER_CONFIG } = CHAMBER_CONFIG;
 
 /**
  * Select event type based on weighted random distribution
@@ -100,22 +75,10 @@ function ParticleRenderer() {
 /**
  * Event spawner manager - handles spawning new physics events
  * Uses refs and getState() to avoid dependency loops
+ * Reads all configuration from SPAWNER_CONFIG
  */
-function useEventSpawner(
-  config: EventConfig,
-  spawnInterval: number,
-  maxActiveEvents: number,
-  initialEvents: number
-) {
-  // Store config in ref to avoid callback dependencies
-  const configRef = useRef(config);
-  configRef.current = config;
-
-  const maxEventsRef = useRef(maxActiveEvents);
-  maxEventsRef.current = maxActiveEvents;
-
-  const initialEventsRef = useRef(initialEvents);
-  initialEventsRef.current = initialEvents;
+function useEventSpawner() {
+  const { spawnInterval, maxActiveEvents, initialEvents } = SPAWNER_CONFIG;
 
   // Get stable function references from store
   const spawnEvent = useEventStore((s) => s.spawnEvent);
@@ -126,7 +89,7 @@ function useEventSpawner(
     // Read current state directly to avoid subscription loops
     const { events } = useEventStore.getState();
 
-    if (events.size >= maxEventsRef.current) return;
+    if (events.size >= maxActiveEvents) return;
 
     const eventType = selectEventType();
     const spawner = EVENT_SPAWNERS[eventType];
@@ -136,42 +99,31 @@ function useEventSpawner(
       return;
     }
 
-    // Create the event data using current config
-    const eventData = spawner(configRef.current);
+    // Create the event data (spawner reads from CHAMBER_CONFIG)
+    const eventData = spawner();
 
     // Register the event in the store
     const eventId = spawnEvent(eventType, eventData.position);
 
     // Spawn the initial particles
     spawnParticles(eventId, eventData.particles);
-  }, [spawnEvent, spawnParticles]);
+  }, [spawnEvent, spawnParticles, maxActiveEvents]);
 
   useEffect(() => {
     // Spawn initial batch of events
-    for (let i = 0; i < initialEventsRef.current; i++) {
+    for (let i = 0; i < initialEvents; i++) {
       spawnNewEvent();
     }
 
     // Set up interval for spawning
     const interval = setInterval(spawnNewEvent, spawnInterval);
     return () => clearInterval(interval);
-  }, [spawnNewEvent, spawnInterval]);
+  }, [spawnNewEvent, spawnInterval, initialEvents]);
 }
 
-export default function Bubblechamber({
-  spawnInterval = 3000,
-  maxActiveEvents = 10,
-  bounds = { x: 7, y: 4 },
-  bField = 3,
-}: BubblechamberProps) {
-  // Memoize config to prevent unnecessary re-renders
-  const config = useMemo<EventConfig>(
-    () => ({ bounds, bField }),
-    [bounds, bField]
-  );
-
-  // Spawn physics events at intervals
-  useEventSpawner(config, spawnInterval, maxActiveEvents, INITIAL_EVENTS);
+export default function Bubblechamber() {
+  // Spawn physics events at intervals (reads from SPAWNER_CONFIG)
+  useEventSpawner();
 
   return (
     <BubblechamberErrorBoundary>
@@ -184,3 +136,4 @@ export default function Bubblechamber({
     </BubblechamberErrorBoundary>
   );
 }
+
