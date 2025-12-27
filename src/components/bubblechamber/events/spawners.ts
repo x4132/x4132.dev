@@ -11,7 +11,6 @@ export interface SpawnResult {
   particles: ParticleSpawnData[];
 }
 
-/** Helper to create particle spawn data with registry defaults */
 function createParticle(
   type: ParticleType,
   overrides: Omit<ParticleSpawnData, "type" | "mass" | "charge" | "color" | "decay">
@@ -20,9 +19,7 @@ function createParticle(
   return { ...data, ...overrides, type };
 }
 
-/**
- * Spawn a pair production event (gamma -> e+ e-)
- */
+// γ → e⁺ + e⁻
 export function createPairProductionEvent(
   position?: [number, number, number]
 ): Omit<SpawnResult, "eventId"> {
@@ -61,91 +58,56 @@ export function createPairProductionEvent(
   return { position: eventPosition, particles };
 }
 
-/**
- * Calculate spawn position and angle for cosmic ray entering from viewport edge
- */
 function calculateEdgeSpawn(bounds: { x: number; y: number }): {
   position: [number, number, number];
   angle: number;
 } {
-  const edge = Math.floor(Math.random() * 4);
+  const edge = Math.floor(Math.random() * 4) as 0 | 1 | 2 | 3;
 
   let position: [number, number, number];
   let baseAngle: number;
 
   switch (edge) {
-    case 0: // left edge
+    case 0: // left
       position = [-bounds.x, (Math.random() - 0.5) * 2 * bounds.y, 0];
-      baseAngle = 0; // aim right
-      break;
-    case 1: // right edge
-      position = [bounds.x, (Math.random() - 0.5) * 2 * bounds.y, 0];
-      baseAngle = Math.PI; // aim left
-      break;
-    case 2: // bottom edge
-      position = [(Math.random() - 0.5) * 2 * bounds.x, -bounds.y, 0];
-      baseAngle = Math.PI / 2; // aim up
-      break;
-    case 3: // top edge
-      position = [(Math.random() - 0.5) * 2 * bounds.x, bounds.y, 0];
-      baseAngle = -Math.PI / 2; // aim down
-      break;
-    default:
-      position = [-bounds.x, 0, 0];
       baseAngle = 0;
+      break;
+    case 1: // right
+      position = [bounds.x, (Math.random() - 0.5) * 2 * bounds.y, 0];
+      baseAngle = Math.PI;
+      break;
+    case 2: // bottom
+      position = [(Math.random() - 0.5) * 2 * bounds.x, -bounds.y, 0];
+      baseAngle = Math.PI / 2;
+      break;
+    case 3: // top
+      position = [(Math.random() - 0.5) * 2 * bounds.x, bounds.y, 0];
+      baseAngle = -Math.PI / 2;
+      break;
   }
 
-  // Add ±15° randomization
-  const angle = baseAngle + (Math.random() - 0.5) * 0.52;
-
-  return { position, angle };
+  return { position, angle: baseAngle + (Math.random() - 0.5) * 0.52 };
 }
 
+const cosmicRaySpawner = new GuaranteedVarietySpawner(COSMIC_RAY_CONFIGS, 42);
 
-
-/**
- * Global cosmic ray spawner with guaranteed variety
- * Persists across events to ensure long-term particle type diversity
- */
-const cosmicRaySpawner = new GuaranteedVarietySpawner(
-  COSMIC_RAY_CONFIGS,
-  42 // Fixed seed for consistent but varied spawns
-);
-
-/**
- * Spawn a cosmic ray event with varied momentum
- * Momentum categories:
- * - Low: 1-4 GeV (tight spirals for charged particles)
- * - Medium: 4-12 GeV (moderate curves)
- * - High: 12-25 GeV (nearly straight tracks)
- */
 export function createCosmicRayEvent(
   subtype?: CosmicRayType
 ): Omit<SpawnResult, "eventId"> {
-  // Calculate edge spawn position and direction
   const { position, angle } = calculateEdgeSpawn(bounds);
-
-  // Select particle type using guaranteed variety spawner
-  // Ensures all particle types spawn at minimum frequency (1 per 25 particles)
-  // Uses weighted random selection with fake RNG for deterministic variety
   const selectedType = subtype ?? cosmicRaySpawner.selectNext();
 
-  // Momentum distribution: mix of low, medium, and high
-  // 15% low (8-15), 50% medium (15-40), 35% high (40-100)
+  // Momentum distribution: 15% low, 50% medium, 35% high
   const momentumRoll = Math.random();
   let baseMomentum: number;
   if (momentumRoll < 0.15) {
-    // Low momentum - visible spirals
     baseMomentum = 8 + Math.random() * 7;
   } else if (momentumRoll < 0.65) {
-    // Medium momentum - gentle curves
     baseMomentum = 15 + Math.random() * 25;
   } else {
-    // High momentum - nearly straight, crosses viewport
     baseMomentum = 40 + Math.random() * 60;
   }
 
-  // Scale momentum based on particle mass (heavier particles need more momentum)
   const momentum = baseMomentum * (1 + PARTICLE_DATA[selectedType].mass * 0.5);
 
   const particles: ParticleSpawnData[] = [
@@ -162,12 +124,8 @@ export function createCosmicRayEvent(
   return { position, particles };
 }
 
-/**
- * Spawn a kaon decay event - K⁰ entering from viewport edge
- * Creates characteristic V-pattern when K⁰ decays to π⁺ + π⁻
- */
+// K⁰ → π⁺ + π⁻ (V-pattern decay)
 export function createKaonDecayEvent(): Omit<SpawnResult, "eventId"> {
-  // Calculate edge spawn position and direction
   const { position, angle } = calculateEdgeSpawn(bounds);
 
   const momentum = 25 + Math.random() * 50;
@@ -186,41 +144,27 @@ export function createKaonDecayEvent(): Omit<SpawnResult, "eventId"> {
   return { position, particles };
 }
 
-/**
- * Event spawner registry
- */
 export type EventSpawner = () => Omit<SpawnResult, "eventId">;
 
 export const EVENT_SPAWNERS: Record<EventType, EventSpawner | null> = {
   pair_production: createPairProductionEvent,
   cosmic_ray: createCosmicRayEvent,
   kaon_decay: createKaonDecayEvent,
-  // Placeholder for future events
   v_event: null,
   muon_pair: null,
   pion_pair: null,
 };
 
-/**
- * Type guard to check if an event type has a valid spawner
- */
 export function hasValidSpawner(
   eventType: EventType
 ): eventType is EventType & { spawner: EventSpawner } {
   return EVENT_SPAWNERS[eventType] !== null;
 }
 
-/**
- * Get spawner for event type, returns null if not implemented
- */
 export function getSpawner(eventType: EventType): EventSpawner | null {
   return EVENT_SPAWNERS[eventType];
 }
 
-/**
- * Get cosmic ray spawn statistics for debugging/analysis
- * Returns object with counts of each particle type spawned
- */
 export function getCosmicRayStats() {
   return {
     stats: cosmicRaySpawner.getStats(),

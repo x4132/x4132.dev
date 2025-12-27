@@ -1,13 +1,3 @@
-/**
- * Particle physics data registry
- *
- * This file defines all particle types and their properties.
- * ParticleType is derived from the PARTICLE_DATA keys to ensure type safety.
- */
-
-/**
- * All valid particle type identifiers.
- */
 export type ParticleType =
   | "electron"
   | "positron"
@@ -20,23 +10,14 @@ export type ParticleType =
   | "photon"
   | "proton";
 
-/**
- * Static particle physics data for each particle type
- */
 export type ParticleData = {
   type: ParticleType;
-
   mass: number;
   charge: number;
-
   color: string;
-
   decay?: DecayConfig;
 };
 
-/**
- * Decay configuration for unstable particles
- */
 export type DecayConfig = {
   meanLifetime: number;
   channels: Array<{
@@ -71,8 +52,7 @@ const ANTIMUON_DECAY: DecayConfig = {
   ],
 };
 
-// π+ → μ+ + νμ (99.99% branching ratio)
-// We ignore the neutrino since it's invisible
+// π+ → μ+ + νμ
 const PION_PLUS_DECAY: DecayConfig = {
   meanLifetime: 0.5,
   channels: [
@@ -94,8 +74,7 @@ const PION_MINUS_DECAY: DecayConfig = {
   ],
 };
 
-// π⁰ → γ + γ (98.8% branching ratio)
-// Very short-lived - decays almost immediately
+// π⁰ → γ + γ
 const PION_NEUTRAL_DECAY: DecayConfig = {
   meanLifetime: 0.1,
   channels: [
@@ -109,7 +88,6 @@ const PION_NEUTRAL_DECAY: DecayConfig = {
   ],
 };
 
-// K⁰ decays - simplified decay modes
 // K⁰_S → π+ + π- (69%) or π⁰ + π⁰ (31%)
 const KAON_NEUTRAL_DECAY: DecayConfig = {
   meanLifetime: 0.8,
@@ -131,12 +109,6 @@ const KAON_NEUTRAL_DECAY: DecayConfig = {
   ],
 };
 
-/**
- * Registry of all particle types and their physics properties.
- * Adding a new particle requires:
- * 1. Add to ParticleType union above
- * 2. Add entry here with type, mass, charge, color, and optional decay config
- */
 export const PARTICLE_DATA: Record<ParticleType, ParticleData> = {
   electron: {
     type: "electron",

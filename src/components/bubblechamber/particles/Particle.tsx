@@ -45,11 +45,6 @@ const STEPS_PER_FRAME = 5;
 const MIN_MOMENTUM = 0.2;
 const MAX_POINTS = 10000;
 
-/**
- * Particle fade-out configuration
- * When a particle dies, it waits `delay` seconds, then fades over `duration` seconds.
- * `easeOutStrength` adds ease-out effect (0 = linear, higher = faster start)
- */
 const FADE_CONFIG = {
   delay: 1.5,
   duration: 3.0,
@@ -113,9 +108,8 @@ function calculateTwoBodyDecay(
   const pStarSq =
     ((M * M - sumMass * sumMass) * (M * M - diffMass * diffMass)) / (4 * M * M);
 
-  // Handle edge case where decay is kinematically forbidden
+  // Kinematically forbidden
   if (pStarSq <= 0) {
-    // Fall back to simple momentum split
     return {
       momentum1: parentMomentum * 0.5,
       angle1: parentAngle + Math.PI / 6,
@@ -125,38 +119,27 @@ function calculateTwoBodyDecay(
   }
 
   const pStar = Math.sqrt(pStarSq);
-
-  // Random decay angle in CM frame (isotropic in 2D)
   const thetaCM = Math.random() * 2 * Math.PI;
 
-  // Daughter 1 in CM frame
+  // CM frame (back-to-back)
   const pxCM1 = pStar * Math.cos(thetaCM);
   const pyCM1 = pStar * Math.sin(thetaCM);
   const E1CM = Math.sqrt(pStar * pStar + mass1 * mass1);
-
-  // Daughter 2 in CM frame (back-to-back)
   const pxCM2 = -pxCM1;
   const pyCM2 = -pyCM1;
   const E2CM = Math.sqrt(pStar * pStar + mass2 * mass2);
 
-  // Lorentz boost to lab frame (boost along parent direction)
-  // p_parallel' = gamma * (p_parallel + beta * E)
-  // p_perp' = p_perp
-  // We rotate so parent moves along x, boost, then rotate back
-
-  // Daughter 1 lab frame
+  // Lorentz boost to lab frame: p_parallel' = gamma * (p_parallel + beta * E)
   const px1Lab = gamma * (pxCM1 + beta * E1CM);
   const py1Lab = pyCM1;
   const p1Lab = Math.sqrt(px1Lab * px1Lab + py1Lab * py1Lab);
   const angle1Local = Math.atan2(py1Lab, px1Lab);
 
-  // Daughter 2 lab frame
   const px2Lab = gamma * (pxCM2 + beta * E2CM);
   const py2Lab = pyCM2;
   const p2Lab = Math.sqrt(px2Lab * px2Lab + py2Lab * py2Lab);
   const angle2Local = Math.atan2(py2Lab, px2Lab);
 
-  // Rotate back to lab frame (add parent angle)
   return {
     momentum1: p1Lab,
     angle1: parentAngle + angle1Local,
@@ -187,11 +170,9 @@ export default function Particle({
     markParticleFaded,
   } = useEventStore();
 
-  // Pre-allocated geometry buffer for performance (avoids GC pressure)
   const positionsBuffer = useRef(new Float32Array(MAX_POINTS * 3));
   const bufferAttribute = useRef<THREE.BufferAttribute | null>(null);
 
-  // Stable Three.js objects - memoized to prevent recreation on re-render
   const geometry = useMemo(() => new THREE.BufferGeometry(), []);
   const material = useMemo(
     () => new THREE.LineBasicMaterial({ color, transparent: true, opacity: 1 }),
@@ -202,7 +183,6 @@ export default function Particle({
     [geometry, material]
   );
 
-  // Cleanup Three.js resources on unmount
   useEffect(() => {
     return () => {
       geometry.dispose();
@@ -210,7 +190,6 @@ export default function Particle({
     };
   }, [geometry, material]);
 
-  // Physics state - kept in ref for performance (not triggering re-renders)
   const state = useRef<ParticleState>({
     x: startPosition[0],
     y: startPosition[1],
@@ -227,8 +206,6 @@ export default function Particle({
     fadeDelayRemaining: FADE_CONFIG.delay,
   });
 
-  // Handle decay - spawn new particles through the store
-  // Uses proper relativistic kinematics for two-body decays
   const handleDecay = (
     position: [number, number, number],
     parentMomentum: number,
@@ -237,7 +214,7 @@ export default function Particle({
   ) => {
     const particlesToSpawn: ParticleSpawnData[] = [];
 
-    // Two-body decay: use proper kinematics with momentum conservation
+    // Two-body decay with relativistic kinematics
     if (products.length === 2) {
       const data1 = PARTICLE_DATA[products[0].type];
       const data2 = PARTICLE_DATA[products[1].type];
@@ -285,8 +262,7 @@ export default function Particle({
         bounds,
       });
     } else {
-      // Single-body or multi-body decay: use original momentum fraction approach
-      // (e.g., muon -> electron + invisible neutrinos)
+      // Multi-body decay (e.g., muon -> electron + neutrinos)
       for (const product of products) {
         const particleData = PARTICLE_DATA[product.type];
         if (!particleData) {
@@ -321,7 +297,6 @@ export default function Particle({
     const s = state.current;
     if (!s.alive) return;
 
-    // Handle fading phase
     if (s.isFading) {
       if (s.fadeDelayRemaining > 0) {
         s.fadeDelayRemaining -= dt;
@@ -343,9 +318,8 @@ export default function Particle({
       return;
     }
 
-    // Physics simulation
     for (let i = 0; i < STEPS_PER_FRAME; i++) {
-      // Check for radioactive decay
+      // Radioactive decay
       if (
         decay &&
         s.decayTime !== null &&
@@ -362,7 +336,6 @@ export default function Particle({
         return;
       }
 
-      // Check for momentum exhaustion
       if (s.momentum <= MIN_MOMENTUM && !s.isFading) {
         s.isFading = true;
         if (!s.hasDecayed) {
@@ -371,20 +344,18 @@ export default function Particle({
         return;
       }
 
-      // Relativistic velocity calculation
+      // Relativistic: E = sqrt(p² + m²), v = p/E
       const energy = Math.sqrt(s.momentum * s.momentum + mass * mass);
       const speed = s.momentum / energy;
 
-      // Cyclotron frequency (Lorentz force in magnetic field)
+      // Cyclotron frequency: ω = qB/E
       const omega = (charge * bField) / energy;
 
-      // Update position and angle
       s.x += Math.cos(s.angle) * speed * dt;
       s.y += Math.sin(s.angle) * speed * dt;
       s.angle += omega * dt;
 
-      // Only apply energy loss to charged particles (ionization)
-      // Massless/neutral particles like photons don't ionize the medium
+      // Ionization energy loss (charged particles only)
       if (charge !== 0) {
         s.momentum *= 1 - energyLossRate;
       }
@@ -393,7 +364,6 @@ export default function Particle({
 
       s.points.push([s.x, s.y, s.z]);
 
-      // Check viewport bounds
       if (bounds && !s.isFading) {
         if (Math.abs(s.x) > bounds.x || Math.abs(s.y) > bounds.y) {
           s.isFading = true;
@@ -405,7 +375,6 @@ export default function Particle({
       }
     }
 
-    // Update geometry with new points using pre-allocated buffer
     const buffer = positionsBuffer.current;
     const pointCount = Math.min(s.points.length, MAX_POINTS);
     for (let i = 0; i < pointCount; i++) {
