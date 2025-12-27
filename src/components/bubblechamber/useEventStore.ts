@@ -7,10 +7,7 @@ export type {
   DecayConfig,
 } from "./particles/registry";
 
-import type {
-  ParticleType,
-  DecayConfig,
-} from "./particles/registry";
+import type { ParticleType, DecayConfig } from "./particles/registry";
 
 export type EventType =
   | "pair_production"
@@ -74,28 +71,20 @@ interface EventStore {
   particles: Map<string, ParticleRecord>;
 
   spawnEvent: (type: EventType, position: [number, number, number]) => string;
-  cleanup: (eventId: string) => void;
 
   spawnParticles: (eventId: string, particles: ParticleSpawnData[]) => string[];
   markParticleDecayed: (particleId: string) => void;
   markParticleStopped: (particleId: string) => void;
   markParticleExited: (particleId: string) => void;
   markParticleFaded: (particleId: string) => void;
-
-  getActiveEvents: () => PhysicsEvent[];
-  getEventParticles: (eventId: string) => ParticleRecord[];
-  getAllActiveParticles: () => ParticleRecord[];
 }
-
-const generateEventId = () => `event_${crypto.randomUUID().slice(0, 8)}`;
-const generateParticleId = () => `particle_${crypto.randomUUID().slice(0, 8)}`;
 
 export const useEventStore = create<EventStore>((set, get) => ({
   events: new Map(),
   particles: new Map(),
 
   spawnEvent: (type, position) => {
-    const id = generateEventId();
+    const id = `event_${crypto.randomUUID().slice(0, 8)}`;
     const event: PhysicsEvent = {
       id,
       type,
@@ -129,7 +118,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
       const newParticleIds: string[] = [];
 
       for (const data of particlesData) {
-        const id = generateParticleId();
+        const id = `particle_${crypto.randomUUID().slice(0, 8)}`;
         ids.push(id);
         newParticleIds.push(id);
 
@@ -227,41 +216,5 @@ export const useEventStore = create<EventStore>((set, get) => ({
 
       return { particles, events };
     });
-  },
-
-  cleanup: (eventId) => {
-    set((state) => {
-      const events = new Map(state.events);
-      const particles = new Map(state.particles);
-
-      const event = events.get(eventId);
-      if (event) {
-        for (const particleId of event.particleIds) {
-          particles.delete(particleId);
-        }
-        events.delete(eventId);
-      }
-
-      return { events, particles };
-    });
-  },
-
-  getActiveEvents: () => {
-    return Array.from(get().events.values());
-  },
-
-  getEventParticles: (eventId) => {
-    const event = get().events.get(eventId);
-    if (!event) return [];
-
-    return event.particleIds
-      .map((id) => get().particles.get(id))
-      .filter((p): p is ParticleRecord => p !== undefined);
-  },
-
-  getAllActiveParticles: () => {
-    return Array.from(get().particles.values()).filter(
-      (p) => p.status !== "faded"
-    );
   },
 }));

@@ -1,10 +1,7 @@
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { useRef, useMemo, useEffect } from "react";
-import {
-  useEventStore,
-  type ParticleSpawnData,
-} from "../useEventStore";
+import { useEventStore, type ParticleSpawnData } from "../useEventStore";
 import { PARTICLE_DATA, type DecayConfig, type DecayProduct } from "./registry";
 
 export type { DecayProduct, DecayConfig };
@@ -50,24 +47,6 @@ const FADE_CONFIG = {
   duration: 3.0,
   easeOutStrength: 1.0,
 } as const;
-
-function sampleDecayTime(meanLifetime: number): number {
-  return -meanLifetime * Math.log(Math.random());
-}
-
-function selectDecayChannel(
-  channels: DecayConfig["channels"]
-): DecayProduct[] | null {
-  const rand = Math.random();
-  let cumulative = 0;
-  for (const channel of channels) {
-    cumulative += channel.probability;
-    if (rand < cumulative) {
-      return channel.products;
-    }
-  }
-  return null;
-}
 
 /**
  * Calculate two-body decay kinematics with momentum conservation.
@@ -199,7 +178,7 @@ export default function Particle({
     alive: true,
     points: [[startPosition[0], startPosition[1], startPosition[2]]],
     age: 0,
-    decayTime: decay ? sampleDecayTime(decay.meanLifetime) : null,
+    decayTime: decay ? -decay.meanLifetime * Math.log(Math.random()) : null,
     hasDecayed: false,
     isFading: false,
     fadeProgress: 0,
@@ -328,10 +307,17 @@ export default function Particle({
       ) {
         s.hasDecayed = true;
         s.isFading = true;
-        const products = selectDecayChannel(decay.channels);
         markParticleDecayed(id);
-        if (products) {
-          handleDecay([s.x, s.y, s.z], s.momentum, s.angle, products);
+
+        // Select decay channel based on probability weights
+        const rand = Math.random();
+        let cumulative = 0;
+        for (const channel of decay.channels) {
+          cumulative += channel.probability;
+          if (rand < cumulative) {
+            handleDecay([s.x, s.y, s.z], s.momentum, s.angle, channel.products);
+            break;
+          }
         }
         return;
       }

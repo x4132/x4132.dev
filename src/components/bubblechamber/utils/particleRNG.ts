@@ -10,10 +10,6 @@ class SeededRNG {
     this.seed = (this.seed * 1103515245 + 12345) & 0x7fffffff;
     return this.seed / 0x7fffffff;
   }
-
-  nextInt(min: number, max: number): number {
-    return Math.floor(this.next() * (max - min + 1)) + min;
-  }
 }
 
 export interface ParticleTypeConfig<T extends string> {
@@ -48,7 +44,8 @@ export class GuaranteedVarietySpawner<T extends string> {
 
     // Force spawn if any type hasn't appeared within minFrequency
     for (const ptype of this.particleTypes) {
-      const lastSpawn = this.lastSpawnIndex.get(ptype.type) ?? -ptype.minFrequency;
+      const lastSpawn =
+        this.lastSpawnIndex.get(ptype.type) ?? -ptype.minFrequency;
       if (currentIndex - lastSpawn >= ptype.minFrequency) {
         this.recordSpawn(ptype.type, currentIndex);
         return ptype.type;
@@ -72,21 +69,5 @@ export class GuaranteedVarietySpawner<T extends string> {
   private recordSpawn(type: T, index: number): void {
     this.spawnHistory.push(type);
     this.lastSpawnIndex.set(type, index);
-  }
-
-  getStats(): Record<string, number> {
-    const stats: Record<string, number> = {};
-    this.spawnHistory.forEach((type) => {
-      stats[type] = (stats[type] || 0) + 1;
-    });
-    return stats;
-  }
-
-  getTotalSpawned(): number {
-    return this.spawnHistory.length;
-  }
-
-  getHistory(): T[] {
-    return [...this.spawnHistory];
   }
 }

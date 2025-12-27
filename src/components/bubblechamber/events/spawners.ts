@@ -162,15 +162,9 @@ export const EVENT_SPAWNERS: Record<EventType, EventSpawner | null> = {
   pion_pair: null,
 };
 
-export function hasValidSpawner(
-  eventType: EventType
-): eventType is EventType & { spawner: EventSpawner } {
-  return EVENT_SPAWNERS[eventType] !== null;
-}
-
 export function selectEventType(): EventType {
   const activeEvents = EVENT_WEIGHTS.filter(
-    (e) => e.weight > 0 && hasValidSpawner(e.type)
+    (e) => e.weight > 0 && EVENT_SPAWNERS[e.type] !== null
   );
 
   if (activeEvents.length === 0) return "pair_production";
@@ -187,16 +181,4 @@ export function selectEventType(): EventType {
   }
 
   return activeEvents[0].type;
-}
-
-export function getSpawner(eventType: EventType): EventSpawner | null {
-  return EVENT_SPAWNERS[eventType];
-}
-
-export function getCosmicRayStats() {
-  return {
-    stats: cosmicRaySpawner.getStats(),
-    totalSpawned: cosmicRaySpawner.getTotalSpawned(),
-    history: cosmicRaySpawner.getHistory(),
-  };
 }
