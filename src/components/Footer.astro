@@ -1,8 +1,8 @@
 ---
-import { Separator } from '@/components/ui/separator'
-import { SOCIAL_LINKS } from '@/consts'
-import Link from './Link.astro'
-import SocialIcons from './SocialIcons.astro'
+import { Separator } from "@/components/ui/separator";
+import { SOCIAL_LINKS } from "@/consts";
+import Link from "./Link.astro";
+import SocialIcons from "./SocialIcons.astro";
 ---
 
 <footer
@@ -14,7 +14,14 @@ import SocialIcons from './SocialIcons.astro'
     </span>
     <Separator orientation="vertical" className="hidden h-4! sm:block" />
     <p class="text-muted-foreground text-sm">
-      Made with 🤍 by <Link
+      Theme made with 🩵 by me,{" "}<Link
+        href="https://github.com/x4132"
+        class="text-foreground"
+        external
+        underline>x4132</Link
+      >!
+      <br />
+      Layout made with 🤍 by <Link
         href="https://github.com/jktrn"
         class="text-foreground"
         external
