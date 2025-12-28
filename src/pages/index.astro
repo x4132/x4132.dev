@@ -3,6 +3,7 @@ import "@/styles/global.css"
 
 import Header from "@/components/Header.astro"
 import Bubblechamber from "@/components/bubblechamber/Bubblechamber.tsx"
+import { Icon } from "astro-icon/components"
 ---
 
 <!doctype html>
@@ -25,6 +26,10 @@ import Bubblechamber from "@/components/bubblechamber/Bubblechamber.tsx"
 
     <div class="fixed inset-0 -z-10">
         <Bubblechamber client:only="react" />
+    </div>
+
+    <div class="fixed bottom-4 right-4">
+        <Icon name="lucide:circle-question-mark" />
     </div>
   </body>
 </html>

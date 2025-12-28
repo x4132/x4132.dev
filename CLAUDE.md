@@ -4,91 +4,60 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an Astro-based personal portfolio site (x4132.dev) featuring an interactive particle physics bubble chamber simulation built with React Three Fiber. The bubble chamber visualizes relativistic particle interactions including pair production events and particle decay chains in a magnetic field.
+Astro-based personal portfolio site (x4132.dev) with two main features:
+1. **Blog system** - MDX-based with subposts, authors, tags, and TOC generation
+2. **Bubble chamber simulation** - Interactive particle physics visualization using React Three Fiber
 
 ## Commands
 
-**Package Manager**: This project uses `pnpm`
-
 ```bash
-# Development
 pnpm install          # Install dependencies
-pnpm dev             # Start dev server at localhost:4321
-pnpm build           # Build production site to ./dist/
-pnpm preview         # Preview production build locally
-
-# Astro CLI
-pnpm astro ...       # Run Astro CLI commands
+pnpm dev              # Start dev server at localhost:4321
+pnpm build            # Type-check (astro check) then build to ./dist/
+pnpm preview          # Preview production build locally
 ```
 
 ## Architecture
 
+### Content System
+
+Uses Astro Content Collections with three collections defined in `src/content.config.ts`:
+- **blog**: Posts with optional subposts (nested via `/` in ID, e.g., `parent-post/subpost-1`)
+- **authors**: Author profiles linked to posts via `authors` frontmatter array
+- **projects**: Portfolio project entries
+
+**Blog utilities** (`src/lib/data-utils.ts`):
+- `getAllPosts()` / `getPostsByTag()` / `getPostsByAuthor()` - Post queries
+- `getSubpostsForParent()` / `hasSubposts()` - Subpost hierarchy
+- `getTOCSections()` - Table of contents generation for posts with subposts
+- `parseAuthors()` - Resolve author IDs to full author data
+
+**Path alias**: Use `@/*` for imports from `src/*`
+
 ### Physics Simulation System
 
-The bubble chamber simulation is built around a physics event/particle lifecycle system:
+Located in `src/components/bubblechamber/`:
 
-**Event Management** (`src/lib/useEventStore.ts`):
-- Central Zustand store manages physics events and particle records
-- Each event spawns particles and tracks their lifecycle
-- Particles register themselves with events and notify on death/decay
-- Events are cleaned up after a configurable delay
+**Particle Registry** (`particles/registry.ts`):
+- PDG 2024-validated particle data (masses, lifetimes, decay channels)
+- Decay configs with branching ratios (e.g., π⁺ → μ⁺ at 99.99%)
+- All masses in GeV, lifetimes in seconds
 
-**Physics Event Flow**:
-1. `EventManager` spawns physics events at intervals (e.g., pair production)
-2. Event components (e.g., `PairProduction`) create initial particles
-3. Particles simulate relativistic motion in a magnetic field using `useParticlePhysics` hook
-4. When particles decay, they call `onDeath` callback which spawns decay products
-5. Decay products are dynamically rendered using the `PARTICLE_COMPONENTS` registry
-6. Events are automatically cleaned up after `cleanupDelay`
+**Event Store** (`useEventStore.ts`):
+- Zustand store for physics event and particle lifecycle
+- Tracks particle status: active → decayed/stopped/exited → faded
+- Garbage collects events when all particles fade
 
-**Particle Physics** (`src/components/bc/Particle.tsx`):
-- Core `useParticlePhysics` hook handles:
-  - Relativistic momentum and velocity calculations
-  - Lorentz force in magnetic field (curved trajectories)
-  - Energy loss and momentum decay
-  - Radioactive decay using exponential distribution sampling
-  - Multi-channel decay with branching ratios
-  - Fade-out animation after death
-- Each particle type (Electron, Positron, Muon, etc.) configures mass, charge, color, and decay channels
-- Particles render their trajectories as Three.js line geometries
+**Physics Engine** (`particles/Particle.tsx`):
+- `useParticlePhysics` hook: relativistic motion, Lorentz force, energy loss, decay sampling
+- Renders trajectories as Three.js line geometries
+- Per-frame updates via R3F `useFrame`
 
-**Key Physics Parameters**:
-- `bField`: Magnetic field strength (affects curvature radius)
-- `mass`: Rest mass in GeV (affects relativistic calculations)
-- `charge`: Electric charge (±1 for leptons, affects trajectory direction)
-- `energyLossRate`: Rate of momentum loss (simulates ionization)
-- `decay.meanLifetime`: Mean lifetime in simulation time units
-- `decay.channels`: Array of decay modes with probabilities and products
-
-### Tech Stack Integration
-
-- **Astro**: Static site generation, routing via `src/pages/`
-- **React**: Used for interactive components (bubble chamber)
-- **React Three Fiber**: 3D rendering with Three.js
-- **Zustand**: State management for physics events
-- **Tailwind CSS**: Styling (v4 with Vite plugin)
-- **TypeScript**: Strict mode enabled
+**Event Spawners** (`events/spawners.ts`):
+- Physics event types: pair_production, cosmic_ray, kaon_decay, v_event, muon_pair, pion_pair
 
 ### Important Patterns
 
-**Client-Only Rendering**: The bubble chamber uses `client:only="react"` directive since Three.js requires browser APIs.
-
-**Dynamic Particle Creation**: Decay products are spawned dynamically by looking up particle types in `PARTICLE_COMPONENTS` registry. When adding new particle types:
-1. Create particle component in `src/components/bc/` (extend `Particle.tsx`)
-2. Define decay config if unstable
-3. Register in `PARTICLE_COMPONENTS` map in `PairProduction.tsx`
-
-**State Management**:
-- Physics state lives in Zustand store (`useEventStore`)
-- Local particle physics uses `useFrame` hook for per-frame updates
-- Particle trajectories accumulate points in a ref-based state object
-
-## File Structure
-
-- `src/components/bc/` - Particle physics components
-  - `Particle.tsx` - Core particle physics engine and rendering
-  - `PairProduction.tsx` - Pair production event handler with decay chain management
-  - Individual particle types (Electron, Muon, etc.)
-- `src/lib/useEventStore.ts` - Zustand store for event/particle lifecycle
-- `src/components/EventManager.tsx` - Top-level event spawner and cleanup
-- `src/components/Bubblechamber.tsx` - Three.js canvas wrapper
+- **Client-only rendering**: Bubble chamber uses `client:only="react"` (Three.js needs browser APIs)
+- **Subpost convention**: Blog posts with subposts use directory structure (`post-name/01-intro.mdx`)
+- **PDG validation**: Particle properties are validated against Particle Data Group 2024 standards

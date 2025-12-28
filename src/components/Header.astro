@@ -5,8 +5,8 @@ import { NAV_LINKS, SITE } from "@/consts";
 const currentURL = Astro.url.pathname;
 ---
 
-<header class="relative z-20">
-  <nav class="flex w-full items-center space-x-4 p-6 text-2xl font-light">
+<header class="relative z-10">
+  <nav class="flex w-full items-center space-x-4 p-6 text-2xl font-light select-none">
     <a
       href="/"
       class={`mr-auto hover:opacity-80 transition-opacity ${currentURL === "/" && "invisible"}`}

@@ -43,14 +43,6 @@
 }
 
 @layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    @apply border-border outline-ring/50 tracking-tight;
-  }
-
   body {
     @apply bg-background text-foreground font-sans;
   }
