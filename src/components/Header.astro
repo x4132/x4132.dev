@@ -14,13 +14,147 @@ const currentURL = Astro.url.pathname;
       {SITE.title}
     </a>
 
-    {NAV_LINKS.map((link) => (
-      <a href={link.href} class="transition-opacity hover:opacity-80 capitalize">
-        {link.label}
-      </a>
-    ))}
-    <button aria-label="Search" class="transition-opacity hover:opacity-80">
-      <Icon name="lucide:search" />
+    <div class="hidden md:flex items-center space-x-4">
+      {NAV_LINKS.map((link) => (
+        <a href={link.href} class="transition-opacity hover:opacity-80 capitalize">
+          {link.label}
+        </a>
+      ))}
+      <button aria-label="Search" class="transition-opacity hover:opacity-80">
+        <Icon name="lucide:search" />
+      </button>
+    </div>
+
+    <button
+      id="menu-toggle"
+      class="md:hidden transition-opacity hover:opacity-80"
+      aria-label="Open menu"
+      aria-expanded="false"
+    >
+      <Icon name="lucide:arrow-left-from-line" />
     </button>
   </nav>
 </header>
+
+<div
+  id="mobile-menu"
+  class="fixed inset-0 z-50 md:hidden pointer-events-none"
+>
+  <div
+    id="menu-backdrop"
+    class="absolute inset-0"
+  ></div>
+  <div
+    id="menu-panel"
+    class="absolute right-0 top-0 w-3/4 bg-background/60 backdrop-blur-lg translate-x-full transition-transform duration-300 ease-out flex flex-col p-6 pl-12 pb-24"
+    style="mask-image: linear-gradient(to right, transparent, black 32px); -webkit-mask-image: linear-gradient(to right, transparent, black 32px);"
+  >
+    <button
+      id="menu-close"
+      class="self-end mb-8 transition-opacity hover:opacity-80"
+      aria-label="Close menu"
+    >
+      <Icon name="lucide:arrow-right-from-line" class="size-6" />
+    </button>
+
+    <div class="flex flex-col space-y-6 text-2xl font-light">
+      {NAV_LINKS.map((link) => (
+        <a href={link.href} class="transition-opacity hover:opacity-80 capitalize">
+          {link.label}
+        </a>
+      ))}
+      <button aria-label="Search" class="transition-opacity hover:opacity-80 flex items-center gap-2">
+        <Icon name="lucide:search" />
+        <span>Search</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  class MobileMenuState {
+    menuToggle: HTMLElement | null = null;
+    menuClose: HTMLElement | null = null;
+    mobileMenu: HTMLElement | null = null;
+    menuBackdrop: HTMLElement | null = null;
+    menuPanel: HTMLElement | null = null;
+
+    reset() {
+      this.menuToggle = null;
+      this.menuClose = null;
+      this.mobileMenu = null;
+      this.menuBackdrop = null;
+      this.menuPanel = null;
+    }
+  }
+
+  const state = new MobileMenuState();
+
+  function openMenu() {
+    if (!state.mobileMenu || !state.menuPanel || !state.menuToggle) return;
+    state.mobileMenu.classList.remove("pointer-events-none");
+    state.mobileMenu.classList.add("pointer-events-auto");
+    state.menuPanel.classList.remove("translate-x-full");
+    state.menuPanel.classList.add("translate-x-0");
+    state.menuToggle.setAttribute("aria-expanded", "true");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeMenu() {
+    if (!state.mobileMenu || !state.menuPanel || !state.menuToggle) return;
+    state.mobileMenu.classList.add("pointer-events-none");
+    state.mobileMenu.classList.remove("pointer-events-auto");
+    state.menuPanel.classList.add("translate-x-full");
+    state.menuPanel.classList.remove("translate-x-0");
+    state.menuToggle.setAttribute("aria-expanded", "false");
+    document.body.style.overflow = "";
+  }
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === "Escape") closeMenu();
+  }
+
+  class MobileMenuController {
+    static init() {
+      state.reset();
+      state.menuToggle = document.getElementById("menu-toggle");
+      state.menuClose = document.getElementById("menu-close");
+      state.mobileMenu = document.getElementById("mobile-menu");
+      state.menuBackdrop = document.getElementById("menu-backdrop");
+      state.menuPanel = document.getElementById("menu-panel");
+
+      if (!state.menuToggle || !state.mobileMenu || !state.menuPanel) return;
+
+      state.menuToggle.addEventListener("click", openMenu);
+      state.menuClose?.addEventListener("click", closeMenu);
+      state.menuBackdrop?.addEventListener("click", closeMenu);
+
+      state.mobileMenu.querySelectorAll("a").forEach((link) => {
+        link.addEventListener("click", closeMenu);
+      });
+
+      document.addEventListener("keydown", handleKeydown);
+    }
+
+    static cleanup() {
+      state.menuToggle?.removeEventListener("click", openMenu);
+      state.menuClose?.removeEventListener("click", closeMenu);
+      state.menuBackdrop?.removeEventListener("click", closeMenu);
+
+      state.mobileMenu?.querySelectorAll("a").forEach((link) => {
+        link.removeEventListener("click", closeMenu);
+      });
+
+      document.removeEventListener("keydown", handleKeydown);
+      document.body.style.overflow = "";
+      state.reset();
+    }
+  }
+
+  document.addEventListener("astro:page-load", () => MobileMenuController.init());
+  document.addEventListener("astro:before-swap", () => MobileMenuController.cleanup());
+  document.addEventListener("astro:after-swap", () => {
+    MobileMenuController.cleanup();
+    MobileMenuController.init();
+  });
+</script>
