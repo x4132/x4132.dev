@@ -1,21 +1,26 @@
 ---
-import { Search } from "lucide-react";
+import { Icon } from "astro-icon/components";
+import { NAV_LINKS, SITE } from "@/consts";
+
 const currentURL = Astro.url.pathname;
 ---
 
-<header>
-    <nav class="flex items-center w-full p-6 space-x-4 text-2xl font-light">
-        <a
-            href="/"
-            class={`mr-auto hover:opacity-80 transition-opacity ${currentURL === "/" && "invisible"}`}
-        >
-            Home
-        </a>
+<header class="relative z-20">
+  <nav class="flex w-full items-center space-x-4 p-6 text-2xl font-light">
+    <a
+      href="/"
+      class={`mr-auto hover:opacity-80 transition-opacity ${currentURL === "/" && "invisible"}`}
+    >
+      {SITE.title}
+    </a>
 
-        <a href="/blog" class="hover:opacity-80 transition-opacity">Blog</a>
-        <a href="/tools" class="hover:opacity-80 transition-opacity">Tools</a>
-        <button aria-label="Search" class="hover:opacity-80 transition-opacity">
-            <Search />
-        </button>
-    </nav>
+    {NAV_LINKS.map((link) => (
+      <a href={link.href} class="transition-opacity hover:opacity-80 capitalize">
+        {link.label}
+      </a>
+    ))}
+    <button aria-label="Search" class="transition-opacity hover:opacity-80">
+      <Icon name="lucide:search" />
+    </button>
+  </nav>
 </header>
