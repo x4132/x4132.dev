@@ -29,17 +29,6 @@ export default function HelpTooltip() {
           </a>
           !
         </p>
-        <p className="text-muted-foreground mt-1">
-          Blog template made with 🤍 by{" "}
-          <a
-            href="https://github.com/jktrn"
-            target="_blank"
-            className="text-foreground decoration-muted-foreground hover:decoration-foreground underline underline-offset-[3px] transition-colors duration-300 ease-in-out"
-          >
-            enscribe
-          </a>
-          ! - (astro-erudite)
-        </p>
       </TooltipContent>
     </Tooltip>
   );
