@@ -24,10 +24,8 @@ export default defineConfig({
   site: "https://x4132.dev",
   integrations: [
     expressiveCode({
-      themes: ["github-light", "github-dark"],
+      themes: ["github-dark"],
       plugins: [pluginCollapsibleSections(), pluginLineNumbers()],
-      useDarkModeMediaQuery: false,
-      themeCssSelector: (theme) => `[data-theme="${theme.name.split("-")[1]}"]`,
       defaultProps: {
         wrap: true,
         collapseStyle: "collapsible-auto",
@@ -90,10 +88,7 @@ export default defineConfig({
       [
         rehypePrettyCode,
         {
-          theme: {
-            light: "github-light",
-            dark: "github-dark",
-          },
+          theme: "github-dark",
         },
       ],
     ],
