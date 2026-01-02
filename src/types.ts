@@ -6,6 +6,7 @@ export type Site = {
   locale: string
   featuredPostCount: number
   postsPerPage: number
+  twitterHandle?: string
 }
 
 export type SocialLink = {

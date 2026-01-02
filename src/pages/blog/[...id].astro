@@ -1,4 +1,5 @@
 ---
+import ArticleSchema from '@/components/ArticleSchema.astro'
 import Breadcrumbs from '@/components/Breadcrumbs.astro'
 import Link from '@/components/Link.astro'
 import PostHead from '@/components/PostHead.astro'
@@ -60,6 +61,7 @@ const tocSections = await getTOCSections(currentPostId)
 
 <Layout>
   <PostHead slot="head" post={post} />
+  <ArticleSchema slot="head" post={post} authors={authors} />
   {
     (hasChildPosts || isCurrentSubpost) && (
       <SubpostsHeader

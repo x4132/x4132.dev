@@ -1,0 +1,17 @@
+---
+import { SITE } from '@/consts'
+
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: SITE.title,
+  url: SITE.href,
+  description: SITE.description,
+  author: {
+    '@type': 'Person',
+    name: SITE.author,
+  },
+}
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} />
