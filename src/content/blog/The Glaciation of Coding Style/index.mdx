@@ -1,0 +1,41 @@
+# The Glaciation of Coding Practices
+*And the Degradation of Taste*
+[Did you know that you can use four backticks (\`) to also form a code block?](https://x.com/r_marked/status/2005911472585502945) This way, you can properly put markdown that contains regular code blocks into code blocks, like so:
+
+`````markdown
+````markdown
+# Example of Code
+```javascript
+console.log("wow!");
+```
+````
+`````
+
+Amazing! Except, nobody ever uses this syntax, and especially not LLMs. This creates big issues when LLMs output text, given that their human-readable output formats are almost always in markdown. I also lied. You can actually use more than four backticks, and any amount of backticks greater than three ($n+3$) backticks will work perfectly fine, which is how I encoded the example above.
+
+# The Glaciation of Coding Practices
+We all know the obvious reason why LLM's don't do this. Simply, there isn't enough data on this, because humans never used it when writing markdown. But this points to something larger. LLMs are trained on the aggregate of human output. They simply learn what things *are*, not what a thing *could be* or what it really *should* be. Using quad (or higher) backticks for code blocks in markdown is a [documented feature of CommonMark](https://spec.commonmark.org/0.31.2/#fenced-code-blocks), the most common markdown spec. It's just uncommon, and to an LLM, being uncommon is just about the worst thing that can happen. To it, it's indistinguishable from invalid markdown.
+
+Before LLMs, coding conventions had a chance to grow. Slowly, irregularly, but their evolution was inevitable. A persuasive blog post, popular new library or paradigm, a groundbreaking conference talk could change how engineers wrote code. Style, taste and paradigm were unique and heterogenous to every org and engineer.
+
+But now, as the fraction of code being written by LLMs ever increases, the current styles, paradigms, and trendy state management libraries become frozen in time, a glacier of convention. With code now being written only by a handful of "engineers" named Claude, GPT, Gemini, Grok, Kimi, and DeepSeek, everything starts to look homogenous. Practices that were once common are now *universal*. Practices that were *uncommon* become *extinct*.
+
+As time marches on, this problem will only compound. The popular will only become ever more popular, while the new, experimental, the *better* gets silenced under the roar of an unstoppable stream of tokens.
+
+# The Degradation of Taste
+
+> Taste is the perception stimulated when a substance in the mouth reacts chemically with taste receptor cells located on taste buds in the oral cavity, mostly on the tongue. Taste, along with the sense of smell and trigeminal nerve stimulation (registering texture, pain, and temperature), determines flavors of food and other substances. Humans have taste receptors on taste buds and other areas, including the upper surface of the tongue and the epiglottis. The gustatory cortex is responsible for the perception of taste. 
+> *From Wikipedia*
+
+Taste, in the concept of *preferences*, is a highly individual experience. It's an inherently *human* heuristic. You develop taste by writing bad code and feeling bad about it. By revisiting something six months later and feeling disgusted, asking who could have written such terrible code, only to realize you wrote it yourself. By reading someone else's code and admiring the elegance of their solution, and the inherent *ugliness* in your solution. Taste is scar tissue from your own mistakes. But LLMs have no taste. It only cares about the reward function, which it achieves when the code works. It can't understand when something is technically correct but tastefully *ugly*. 
+
+# Why does this even matter?
+Honestly, there is a pretty good argument that none of this matters. If LLMs are writing all our code, there's no need for taste. It might turn out that the only thing that matters is the interface between the engineer and the LLM. But despite what anybody says, I don't think that day will come within the year, or maybe even the next two or three years. In this liminal time, humans will still need to read code. And while human individuals still read code, taste will still matter.
+
+
+
+
+### Coda
+In real life, the force of an advancing glacier is unstoppable. It excavates new rivers, and shapes our mountains. Similarly, the use of LLMs is inevitable in software engineering. The Quad backtick will almost definitely stay obscure. It simply isn't that big of a deal - just use `<pre>` instead. But somewhere, sometime, the glacier of slop will advance over innovations that are *genuinely better* - cleaner, clearer, more elegant than the status quo, freezing it permanently under a sea of new LLM-generated code. 
+
+I don't know how to fix this. Maybe it's not fixable. Maybe it's just the cost of the tool, and the cost is worth paying. But I think it's worth noticing, and worth holding on to the *hope* that we can still embrace the new and unproven, in the hope that it in turn creates better software.
