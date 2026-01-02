@@ -1,0 +1,16 @@
+{
+  "name": "x4132.dev",
+  "short_name": "x4132",
+  "description": "Hacker, Builder, Engineer.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#121212",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "322x322",
+      "type": "image/png"
+    }
+  ]
+}
