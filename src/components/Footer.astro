@@ -1,0 +1,17 @@
+---
+import { Separator } from "@/components/ui/separator";
+import { SOCIAL_LINKS } from "@/consts";
+import Link from "./Link.astro";
+import SocialIcons from "./SocialIcons.astro";
+---
+
+<footer
+  class="mx-auto mb-8 flex w-full max-w-3xl flex-col items-center justify-center gap-y-2 px-4 sm:mb-4 sm:flex-row sm:justify-between"
+>
+  <div class="flex flex-wrap items-center justify-center gap-x-2 text-center">
+    <span class="text-muted-foreground text-sm">
+      Made with 🩵. &copy; {new Date().getFullYear()} x4132. All rights reserved.
+    </span>
+  </div>
+  <SocialIcons links={SOCIAL_LINKS} />
+</footer>
