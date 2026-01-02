@@ -8,6 +8,7 @@ export const SITE: Site = {
   locale: "en-US",
   featuredPostCount: 2,
   postsPerPage: 5,
+  twitterHandle: "@0x4132",
 };
 
 export const NAV_LINKS: SocialLink[] = [
