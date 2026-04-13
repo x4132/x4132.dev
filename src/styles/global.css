@@ -38,7 +38,7 @@
   --muted-foreground: oklch(0.708 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: #ffffff;
-  --border: oklch(1 0 0 / 10%);
+  --border: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
 }
 
@@ -54,5 +54,9 @@
 
   button:hover {
     @apply cursor-pointer;
+  }
+
+  .border {
+    @apply border-border;
   }
 }
